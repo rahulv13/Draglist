@@ -37,6 +37,7 @@ type FormValues = {
   type: 'Anime' | 'Manga';
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   total: number;
+  imageUrl: string;
 };
 
 export default function SearchPage() {
@@ -57,6 +58,7 @@ export default function SearchPage() {
       type: 'Anime',
       status: 'Planned',
       total: 12,
+      imageUrl: '',
     },
   });
   
@@ -104,6 +106,19 @@ export default function SearchPage() {
                       <FormLabel>Title</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Void Specter" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

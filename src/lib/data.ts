@@ -147,13 +147,13 @@ let allTitles: Title[] = [
   },
 ];
 
-export const addTitle = (newTitleData: Omit<Title, 'id' | 'progress' | 'score' | 'imageUrl' | 'imageHint'>) => {
+export const addTitle = (newTitleData: Omit<Title, 'id' | 'progress' | 'score' | 'imageHint'>) => {
     const newId = (allTitles.length + 1).toString();
     const newTitle: Title = {
         id: newId,
         progress: 0,
         score: 0,
-        imageUrl: `https://picsum.photos/seed/${newId}/400/600`,
+        imageUrl: newTitleData.imageUrl || `https://picsum.photos/seed/${newId}/400/600`,
         imageHint: newTitleData.title.split(' ').slice(0,2).join(' ').toLowerCase(),
         ...newTitleData,
     };
