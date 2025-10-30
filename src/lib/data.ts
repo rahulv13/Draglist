@@ -147,6 +147,20 @@ const allTitles: Title[] = [
   },
 ];
 
+export const addTitle = (newTitleData: Omit<Title, 'id' | 'progress' | 'score' | 'imageUrl' | 'imageHint'>) => {
+    const newId = (allTitles.length + 1).toString();
+    const imageIndex = allTitles.length % PlaceHolderImages.length;
+    const newTitle: Title = {
+        id: newId,
+        progress: 0,
+        score: 0,
+        imageUrl: `https://picsum.photos/seed/${newId}/400/600`,
+        imageHint: newTitleData.title.split(' ').slice(0,2).join(' ').toLowerCase(),
+        ...newTitleData,
+    };
+    allTitles.unshift(newTitle);
+};
+
 export const getWatching = () =>
   allTitles.filter(
     (t) => t.status === 'Watching' && t.type === 'Anime'
