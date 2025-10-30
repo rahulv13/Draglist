@@ -35,30 +35,46 @@ export default function ListsPage() {
 
         <TabsContent value="watching" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {watching.map((item) => (
-              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-            ))}
+            {watching.length > 0 ? (
+              watching.map((item) => (
+                <AnimeCard key={item.id} item={item} onDataChange={refresh} />
+              ))
+            ) : (
+              <p className="text-muted-foreground col-span-full">You're not watching any anime.</p>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="reading" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {reading.map((item) => (
-              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-            ))}
+            {reading.length > 0 ? (
+              reading.map((item) => (
+                <AnimeCard key={item.id} item={item} onDataChange={refresh} />
+              ))
+            ) : (
+               <p className="text-muted-foreground col-span-full">You're not reading any manga.</p>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="planned" className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {planned.map((item) => (
-                    <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-                ))}
+                {planned.length > 0 ? (
+                  planned.map((item) => (
+                      <AnimeCard key={item.id} item={item} onDataChange={refresh} />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground col-span-full">You have no planned titles.</p>
+                )}
             </div>
         </TabsContent>
         <TabsContent value="completed" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {completed.map((item) => (
-              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-            ))}
+            {completed.length > 0 ? (
+                completed.map((item) => (
+                  <AnimeCard key={item.id} item={item} onDataChange={refresh} />
+                ))
+            ) : (
+                <p className="text-muted-foreground col-span-full">You have no completed titles.</p>
+            )}
           </div>
         </TabsContent>
       </Tabs>
