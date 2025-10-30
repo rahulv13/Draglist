@@ -1,3 +1,76 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Cover for a popular shonen anime",
+      "imageUrl": "https://images.unsplash.com/photo-1574175031491-d262fbabdcfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhY3Rpb24lMjBhbmltZXxlbnwwfHx8fDE3NjE3OTA4Nzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "action anime"
+    },
+    {
+      "id": "2",
+      "description": "Cover for a slice of life manga",
+      "imageUrl": "https://images.unsplash.com/photo-1621998257812-20849f2491f3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzbGljZSUyMGxpZmV8ZW58MHx8fHwxNzYxODQ4ODg4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "slice life"
+    },
+    {
+      "id": "3",
+      "description": "Cover for a fantasy anime",
+      "imageUrl": "https://images.unsplash.com/photo-1679395608214-f1de4a7dbf96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYW50YXN5JTIwYWR2ZW50dXJlfGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fantasy adventure"
+    },
+    {
+      "id": "4",
+      "description": "Cover for a sci-fi anime",
+      "imageUrl": "https://images.unsplash.com/photo-1620002093367-25cbe3c17738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzY2ktZmklMjBzcGFjZXxlbnwwfHx8fDE3NjE4MjQ1Njl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi space"
+    },
+    {
+      "id": "5",
+      "description": "Cover for a romance manga",
+      "imageUrl": "https://images.unsplash.com/photo-1698620625532-1a721990501f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cm9tYW5jZSUyMHNjaG9vbHxlbnwwfHx8fDE3NjE3NzI4MTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "romance school"
+    },
+    {
+      "id": "6",
+      "description": "Cover for a horror anime",
+      "imageUrl": "https://images.unsplash.com/photo-1630338679049-2ca5e3428f7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxob3Jyb3IlMjBteXN0ZXJ5fGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "horror mystery"
+    },
+    {
+      "id": "7",
+      "description": "Cover for a sports anime",
+      "imageUrl": "https://images.unsplash.com/photo-1502904550040-7534597429ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzcG9ydHMlMjB0ZWFtfGVufDB8fHx8MTc2MTgwMzIxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sports team"
+    },
+    {
+      "id": "8",
+      "description": "Cover for a historical manga",
+      "imageUrl": "https://images.unsplash.com/photo-1760292422027-a718a263b840?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxoaXN0b3JpY2FsJTIwZHJhbWF8ZW58MHx8fHwxNzYxODA1MjQ2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "historical drama"
+    },
+    {
+      "id": "9",
+      "description": "Cover for a comedy anime",
+      "imageUrl": "https://picsum.photos/seed/anime6/400/600",
+      "imageHint": "comedy school"
+    },
+    {
+      "id": "10",
+      "description": "Cover for an isekai manga",
+      "imageUrl": "https://images.unsplash.com/photo-1713033766707-2fac55b1a6c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxpc2VrYWklMjBmYW50YXN5fGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "isekai fantasy"
+    },
+    {
+      "id": "11",
+      "description": "Cover for a mystery anime",
+      "imageUrl": "https://images.unsplash.com/photo-1621112657062-d7a5c30b7286?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bXlzdGVyeSUyMGRldGVjdGl2ZXxlbnwwfHx8fDE3NjE4NDg4ODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mystery detective"
+    },
+    {
+      "id": "12",
+      "description": "Cover for a seinen manga",
+      "imageUrl": "https://images.unsplash.com/photo-1620302045185-fa47f83ba817?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzZWluZW4lMjBwc3ljaG9sb2dpY2FsfGVufDB8fHx8MTc2MTg0ODg4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "seinen psychological"
+    }
+  ]
 }
