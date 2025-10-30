@@ -3,29 +3,115 @@
 import type { Title } from '@/lib/data';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Button } from './ui/button';
-import { Minus, Plus, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Minus, Plus, Star, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { updateTitle, deleteTitle } from '@/lib/data';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type AnimeCardProps = {
   item: Title;
+  onDataChange?: () => void;
 };
 
-export function AnimeCard({ item }: AnimeCardProps) {
+type FormValues = {
+  title: string;
+  type: 'Anime' | 'Manga';
+  status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
+  total: number;
+  score: number;
+};
+
+export function AnimeCard({ item, onDataChange = () => {} }: AnimeCardProps) {
   const [progress, setProgress] = useState(item.progress);
+  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const { toast } = useToast();
   const percentage = (progress / item.total) * 100;
+
+  const form = useForm<FormValues>({
+    defaultValues: {
+      title: item.title,
+      type: item.type,
+      status: item.status,
+      total: item.total,
+      score: item.score,
+    },
+  });
 
   const handleProgressChange = (increment: number) => {
     setProgress((prev) => {
       const newValue = prev + increment;
       if (newValue < 0) return 0;
       if (newValue > item.total) return item.total;
+      // Here you might want to call updateTitle as well
       return newValue;
     });
   };
+  
+  const handleEditSubmit: SubmitHandler<FormValues> = (data) => {
+    updateTitle(item.id, { ...data, total: Number(data.total), score: Number(data.score) });
+    toast({
+      title: 'Title Updated',
+      description: `${data.title} has been updated.`,
+    });
+    setEditDialogOpen(false);
+    onDataChange();
+  };
+
+  const handleDelete = () => {
+    deleteTitle(item.id);
+    toast({
+      title: 'Title Deleted',
+      description: `${item.title} has been removed from your lists.`,
+      variant: 'destructive',
+    });
+    onDataChange();
+  };
+
 
   return (
     <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
@@ -39,6 +125,157 @@ export function AnimeCard({ item }: AnimeCardProps) {
           data-ai-hint={item.imageHint}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute top-2 right-2">
+           <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+            <AlertDialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white bg-black/50 hover:bg-black/75 hover:text-white">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                </DropdownMenuContent>
+              </DropdownMenu>
+               <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete "{item.title}" from your lists.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit {item.title}</DialogTitle>
+                <DialogDescription>
+                  Update the details for this title.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleEditSubmit)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    rules={{ required: 'Title is required' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Anime">Anime</SelectItem>
+                            <SelectItem value="Manga">Manga</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Watching">Watching</SelectItem>
+                            <SelectItem value="Reading">Reading</SelectItem>
+                            <SelectItem value="Planned">Planned</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="total"
+                    rules={{
+                      required: 'Total is required',
+                      min: { value: 1, message: 'Must be at least 1' },
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Episodes/Chapters</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="score"
+                    rules={{ min: 0, max: 10 }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Score</FormLabel>
+                        <FormControl>
+                           <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit">Save Changes</Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="absolute bottom-0 left-0 p-4">
           <CardTitle className="text-lg font-bold text-white drop-shadow-lg">
             {item.title}
@@ -47,7 +284,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
         {item.score > 0 && (
           <Badge
             variant="secondary"
-            className="absolute top-2 right-2 text-base bg-background/80"
+            className="absolute top-2 left-2 text-base bg-background/80"
           >
             <Star className="w-4 h-4 mr-1 text-yellow-400 fill-yellow-400" />
             {item.score}

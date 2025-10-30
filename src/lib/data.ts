@@ -12,7 +12,7 @@ export type Title = {
   imageHint: string;
 };
 
-const allTitles: Title[] = [
+let allTitles: Title[] = [
   {
     id: '1',
     title: 'Void Specter',
@@ -149,7 +149,6 @@ const allTitles: Title[] = [
 
 export const addTitle = (newTitleData: Omit<Title, 'id' | 'progress' | 'score' | 'imageUrl' | 'imageHint'>) => {
     const newId = (allTitles.length + 1).toString();
-    const imageIndex = allTitles.length % PlaceHolderImages.length;
     const newTitle: Title = {
         id: newId,
         progress: 0,
@@ -160,6 +159,17 @@ export const addTitle = (newTitleData: Omit<Title, 'id' | 'progress' | 'score' |
     };
     allTitles.unshift(newTitle);
 };
+
+export const updateTitle = (id: string, updatedData: Partial<Omit<Title, 'id' | 'imageUrl' | 'imageHint'>>) => {
+  allTitles = allTitles.map(title => 
+    title.id === id ? { ...title, ...updatedData } : title
+  );
+};
+
+export const deleteTitle = (id: string) => {
+  allTitles = allTitles.filter(title => title.id !== id);
+};
+
 
 export const getWatching = () =>
   allTitles.filter(

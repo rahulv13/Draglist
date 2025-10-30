@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import {
   Tabs,
   TabsContent,
@@ -8,10 +11,14 @@ import { getWatching, getReading, getPlanned, getCompleted } from '@/lib/data';
 import { AnimeCard } from '@/components/anime-card';
 
 export default function ListsPage() {
+  const [version, setVersion] = useState(0);
+
   const watching = getWatching();
   const reading = getReading();
   const planned = getPlanned();
   const completed = getCompleted();
+  
+  const refresh = () => setVersion(v => v + 1);
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -29,28 +36,28 @@ export default function ListsPage() {
         <TabsContent value="watching" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {watching.map((item) => (
-              <AnimeCard key={item.id} item={item} />
+              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="reading" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {reading.map((item) => (
-              <AnimeCard key={item.id} item={item} />
+              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="planned" className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {planned.map((item) => (
-                    <AnimeCard key={item.id} item={item} />
+                    <AnimeCard key={item.id} item={item} onDataChange={refresh} />
                 ))}
             </div>
         </TabsContent>
         <TabsContent value="completed" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {completed.map((item) => (
-              <AnimeCard key={item.id} item={item} />
+              <AnimeCard key={item.id} item={item} onDataChange={refresh} />
             ))}
           </div>
         </TabsContent>

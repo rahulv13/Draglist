@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { SearchIcon, Plus } from 'lucide-react';
-import { getPopular, getSearchResults, addTitle, Title } from '@/lib/data';
+import { getPopular, getSearchResults, addTitle } from '@/lib/data';
 import { AnimeCard } from '@/components/anime-card';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import {
@@ -44,7 +44,6 @@ export default function SearchPage() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   
-  // A simple way to force a re-render
   const [listVersion, setListVersion] = useState(0);
 
   const popular = getPopular();
@@ -60,6 +59,8 @@ export default function SearchPage() {
       total: 12,
     },
   });
+  
+  const refresh = () => setListVersion(v => v + 1);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
     addTitle({
@@ -72,7 +73,7 @@ export default function SearchPage() {
     })
     form.reset();
     setOpen(false);
-    setListVersion(v => v + 1); // Trigger re-render
+    refresh();
   };
 
   return (
@@ -185,7 +186,7 @@ export default function SearchPage() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
         {itemsToShow.map((item) => (
-          <AnimeCard key={`${item.id}-${listVersion}`} item={item} />
+          <AnimeCard key={`${item.id}-${listVersion}`} item={item} onDataChange={refresh} />
         ))}
       </div>
       {query && itemsToShow.length === 0 && (
