@@ -76,10 +76,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     tooltip={item.label}
                     asChild
                   >
-                    <a>
+                    <div>
                       <item.icon />
                       <span>{item.label}</span>
-                    </a>
+                    </div>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
