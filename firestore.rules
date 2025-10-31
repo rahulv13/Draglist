@@ -51,7 +51,7 @@ service cloud.firestore {
       match /titles/{titleId} {
         allow read: if isSignedIn() && isOwner(userId);
         allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isOwner(userId) && !('createdAt' in request.resource.data) && !('id' in request.resource.data);
+        allow update: if isSignedIn() && isOwner(userId) && !('id' in request.resource.data) && !('createdAt' in request.resource.data);
         allow delete: if isSignedIn() && isOwner(userId);
       }
     }
