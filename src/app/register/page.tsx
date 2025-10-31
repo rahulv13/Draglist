@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
 import {
-  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
@@ -22,21 +22,30 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const auth = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description: 'Passwords do not match.',
+      });
+      return;
+    }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       // Redirect will be handled by the AuthProvider
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
+        title: 'Registration Failed',
         description: error.message,
       });
     }
@@ -50,7 +59,7 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Google Sign-In Failed',
+        title: 'Google Sign-Up Failed',
         description: error.message,
       });
     }
@@ -63,13 +72,13 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Logo className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>
-            Sign in to your account to continue
+            Enter your details below to create your account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailRegister} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -91,8 +100,18 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
             <Button type="submit" className="w-full">
-              Sign In
+              Create Account
             </Button>
           </form>
           <div className="relative my-4">
@@ -121,9 +140,9 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex justify-center text-sm">
             <p className="text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/register" className="text-primary hover:underline">
-                    Sign up
+                Already have an account?{' '}
+                <Link href="/login" className="text-primary hover:underline">
+                    Sign in
                 </Link>
             </p>
         </CardFooter>
