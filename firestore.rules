@@ -1,0 +1,74 @@
+/**
+ * @fileoverview Firestore Security Rules for the RahulList application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model, ensuring that users can only access their own data.
+ *
+ * Data Structure:
+ * All data is nested under /users/{userId}, providing a clear ownership hierarchy.
+ *
+ * Key Security Decisions:
+ * - User listing is explicitly disallowed to prevent enumeration vulnerabilities.
+ * - The rules explicitly deny all potentially ambiguous operations to enforce a secure-by-default posture.
+ *
+ * Denormalization for Authorization:
+ *  The rules leverage path-based ownership to avoid the need for complex data lookups or joins during authorization checks.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile information.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' can create their own profile.
+     *     - Auth: { uid: 'user123' }
+     *     - Request Data: { id: 'user123', username: 'testuser', email: 'test@example.com', dateJoined: '2024-01-01T00:00:00Z' }
+     * @allow (get) User with ID 'user123' can read their own profile.
+     *     - Auth: { uid: 'user123' }
+     * @allow (update) User with ID 'user123' can update their own profile.
+     *     - Auth: { uid: 'user123' }
+     * @allow (delete) User with ID 'user123' can delete their own profile.
+     *     - Auth: { uid: 'user123' }
+     * @deny (create) User with ID 'user123' cannot create a profile for 'user456'.
+     *     - Auth: { uid: 'user123' }
+     *     - Request Data: { id: 'user456', username: 'testuser', email: 'test@example.com', dateJoined: '2024-01-01T00:00:00Z' }
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false; // User listing is disallowed.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    // --- Helper Functions ---
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {bool} True if the user is authenticated, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the request is made by the owner of the document.
+     * @param {string} userId The user ID from the document path.
+     * @return {bool} True if the user ID matches the authenticated user's ID, false otherwise.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the request is made by the owner of an existing document.
+     * @param {string} userId The user ID from the document path.
+     * @return {bool} True if the user ID matches the authenticated user's ID and the resource exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+  }
+}
