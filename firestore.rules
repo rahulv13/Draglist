@@ -51,7 +51,7 @@ service cloud.firestore {
       match /titles/{titleId} {
         allow read: if isSignedIn() && isOwner(userId);
         allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isOwner(userId) && request.resource.data.createdAt == resource.data.createdAt;
+        allow update: if isSignedIn() && isOwner(userId) && !('createdAt' in request.resource.data) && !('id' in request.resource.data);
         allow delete: if isSignedIn() && isOwner(userId);
       }
     }
@@ -81,7 +81,7 @@ service cloud.firestore {
      * @return {bool} True if the user ID matches the authenticated user's ID and the resource exists.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
     }
   }
 }
