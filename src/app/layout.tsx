@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/app-layout';
+import { FirebaseClientProvider } from '@/firebase';
+import AuthProvider from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'RahulList',
@@ -24,7 +26,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AppLayout>{children}</AppLayout>
+        <FirebaseClientProvider>
+          <AuthProvider>
+            <AppLayout>{children}</AppLayout>
+          </AuthProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
