@@ -1,25 +1,65 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { getWatching, getReading, getPlanned, getCompleted } from '@/lib/data';
 import { AnimeCard } from '@/components/anime-card';
+import type { Title } from '@/lib/data';
+
+const ListTabContent = ({ titles, emptyMessage }: { titles: Title[] | null; emptyMessage: string }) => {
+  if (!titles) {
+    return <p className="text-muted-foreground col-span-full">Loading...</p>;
+  }
+
+  if (titles.length === 0) {
+    return <p className="text-muted-foreground col-span-full">{emptyMessage}</p>;
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {titles.map((item) => (
+        <AnimeCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+};
+
 
 export default function ListsPage() {
-  const [version, setVersion] = useState(0);
+  const firestore = useFirestore();
+  const { user } = useUser();
 
-  const watching = getWatching();
-  const reading = getReading();
-  const planned = getPlanned();
-  const completed = getCompleted();
+  const titlesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return collection(firestore, 'users', user.uid, 'titles');
+  }, [firestore, user?.uid]);
+
+  const { data: allTitles } = useCollection<Title>(titlesQuery);
+
+  const watching = useMemo(
+    () => allTitles?.filter((t) => t.status === 'Watching') || [],
+    [allTitles]
+  );
+  const reading = useMemo(
+    () => allTitles?.filter((t) => t.status === 'Reading') || [],
+    [allTitles]
+  );
+  const planned = useMemo(
+    () => allTitles?.filter((t) => t.status === 'Planned') || [],
+    [allTitles]
+  );
+  const completed = useMemo(
+    () => allTitles?.filter((t) => t.status === 'Completed') || [],
+    [allTitles]
+  );
   
-  const refresh = () => setVersion(v => v + 1);
-
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -34,48 +74,16 @@ export default function ListsPage() {
         </TabsList>
 
         <TabsContent value="watching" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {watching.length > 0 ? (
-              watching.map((item) => (
-                <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-              ))
-            ) : (
-              <p className="text-muted-foreground col-span-full">You're not watching any anime.</p>
-            )}
-          </div>
+          <ListTabContent titles={watching} emptyMessage="You're not watching any anime." />
         </TabsContent>
         <TabsContent value="reading" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {reading.length > 0 ? (
-              reading.map((item) => (
-                <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-              ))
-            ) : (
-               <p className="text-muted-foreground col-span-full">You're not reading any manga.</p>
-            )}
-          </div>
+          <ListTabContent titles={reading} emptyMessage="You're not reading any manga." />
         </TabsContent>
         <TabsContent value="planned" className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {planned.length > 0 ? (
-                  planned.map((item) => (
-                      <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-                  ))
-                ) : (
-                  <p className="text-muted-foreground col-span-full">You have no planned titles.</p>
-                )}
-            </div>
+          <ListTabContent titles={planned} emptyMessage="You have no planned titles." />
         </TabsContent>
         <TabsContent value="completed" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {completed.length > 0 ? (
-                completed.map((item) => (
-                  <AnimeCard key={item.id} item={item} onDataChange={refresh} />
-                ))
-            ) : (
-                <p className="text-muted-foreground col-span-full">You have no completed titles.</p>
-            )}
-          </div>
+          <ListTabContent titles={completed} emptyMessage="You have no completed titles." />
         </TabsContent>
       </Tabs>
     </div>

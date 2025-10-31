@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -5,11 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  getStats,
-  getRecentActivity,
-  getStatusDistribution,
-} from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Title } from '@/lib/data';
 import {
   Activity,
   BookOpen,
@@ -21,9 +23,82 @@ import {
 import DashboardCharts from '@/components/dashboard-charts';
 
 export default function DashboardPage() {
-  const stats = getStats();
-  const recentActivity = getRecentActivity();
-  const statusDistribution = getStatusDistribution();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  
+  const titlesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return collection(firestore, 'users', user.uid, 'titles');
+  }, [firestore, user?.uid]);
+
+  const { data: allTitles, isLoading } = useCollection<Title>(titlesQuery);
+
+  const stats = useMemo(() => {
+    if (!allTitles) {
+      return [
+        { label: 'Anime Watched', value: 0, change: '+0' },
+        { label: 'Manga Read', value: 0, change: '+0' },
+        { label: 'Episodes Watched', value: 0, change: '+0' },
+        { label: 'In Progress', value: 0, change: '+0' },
+        { label: 'Total Entries', value: 0, change: '+0' },
+        { label: 'Avg. Score', value: '0.00', change: '+0.0' },
+      ];
+    }
+    const animeWatched = allTitles.filter(
+      (t) => t.type === 'Anime' && t.status === 'Completed'
+    ).length;
+    const mangaRead = allTitles.filter(
+      (t) => t.type === 'Manga' && t.status === 'Completed'
+    ).length;
+    const episodesWatched = allTitles
+      .filter((t) => t.type === 'Anime')
+      .reduce((sum, t) => sum + t.progress, 0);
+    const inProgress = allTitles.filter(
+      (t) => t.status === 'Watching' || t.status === 'Reading'
+    ).length;
+    const totalEntries = allTitles.length;
+    const scoredTitles = allTitles.filter((t) => t.score > 0);
+    const avgScore =
+      scoredTitles.length > 0
+        ? (
+            scoredTitles.reduce((sum, t) => sum + t.score, 0) /
+            scoredTitles.length
+          ).toFixed(2)
+        : '0.00';
+
+    return [
+      { label: 'Anime Watched', value: animeWatched, change: '+0' },
+      { label: 'Manga Read', value: mangaRead, change: '+0' },
+      { label: 'Episodes Watched', value: episodesWatched, change: '+0' },
+      { label: 'In Progress', value: inProgress, change: '+0' },
+      { label: 'Total Entries', value: totalEntries, change: '+0' },
+      { label: 'Avg. Score', value: avgScore, change: '+0.0' },
+    ];
+  }, [allTitles]);
+
+  const statusDistribution = useMemo(() => {
+    if (!allTitles) return [];
+    const watching = allTitles.filter((t) => t.status === 'Watching').length;
+    const reading = allTitles.filter((t) => t.status === 'Reading').length;
+    const planned = allTitles.filter((t) => t.status === 'Planned').length;
+    const completed = allTitles.filter((t) => t.status === 'Completed').length;
+    return [
+      { name: 'Watching', value: watching, fill: 'var(--color-watching)' },
+      { name: 'Reading', value: reading, fill: 'var(--color-reading)' },
+      { name: 'Planned', value: planned, fill: 'var(--color-planned)' },
+      { name: 'Completed', value: completed, fill: 'var(--color-completed)' },
+    ];
+  }, [allTitles]);
+
+  // Using mock data until real activity tracking is implemented
+  const recentActivity = [
+    { name: 'Jan', anime: 0, manga: 0 },
+    { name: 'Feb', anime: 0, manga: 0 },
+    { name: 'Mar', anime: 0, manga: 0 },
+    { name: 'Apr', anime: 0, manga: 0 },
+    { name: 'May', anime: 0, manga: 0 },
+    { name: 'Jun', anime: 0, manga: 0 },
+  ];
 
   const iconMap = {
     'Anime Watched': <Film className="h-6 w-6 text-muted-foreground" />,
@@ -49,7 +124,7 @@ export default function DashboardPage() {
               {iconMap[stat.label as keyof typeof iconMap]}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stat.value}</div>
               <p className="text-xs text-muted-foreground">
                 {stat.change} vs last month
               </p>

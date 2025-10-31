@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -93,10 +94,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
-                  <SidebarMenuButton
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
+                  <SidebarMenuButton isActive={pathname === item.href}>
                     <item.icon />
                     <span>{item.label}</span>
                   </SidebarMenuButton>

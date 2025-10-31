@@ -1,9 +1,11 @@
+
 'use client';
 
 import type { Title } from '@/lib/data';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useFirestore, useUser } from '@/firebase';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
@@ -55,7 +57,6 @@ import {
 
 type AnimeCardProps = {
   item: Title;
-  onDataChange?: () => void;
 };
 
 type FormValues = {
@@ -66,11 +67,12 @@ type FormValues = {
   score: number;
 };
 
-export function AnimeCard({ item, onDataChange = () => {} }: AnimeCardProps) {
-  const [progress, setProgress] = useState(item.progress);
+export function AnimeCard({ item }: AnimeCardProps) {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
-  const percentage = (progress / item.total) * 100;
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const percentage = item.total > 0 ? (item.progress / item.total) * 100 : 0;
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -81,35 +83,34 @@ export function AnimeCard({ item, onDataChange = () => {} }: AnimeCardProps) {
       score: item.score,
     },
   });
-
+  
   const handleProgressChange = (increment: number) => {
-    setProgress((prev) => {
-      const newValue = prev + increment;
-      if (newValue < 0) return 0;
-      if (newValue > item.total) return item.total;
-      // Here you might want to call updateTitle as well
-      return newValue;
-    });
+    if (!user) return;
+    let newProgress = item.progress + increment;
+    if (newProgress < 0) newProgress = 0;
+    if (newProgress > item.total) newProgress = item.total;
+    
+    updateTitle(firestore, user.uid, item.id, { progress: newProgress });
   };
   
   const handleEditSubmit: SubmitHandler<FormValues> = (data) => {
-    updateTitle(item.id, { ...data, total: Number(data.total), score: Number(data.score) });
+    if (!user) return;
+    updateTitle(firestore, user.uid, item.id, { ...data, total: Number(data.total), score: Number(data.score) });
     toast({
       title: 'Title Updated',
       description: `${data.title} has been updated.`,
     });
     setEditDialogOpen(false);
-    onDataChange();
   };
 
   const handleDelete = () => {
-    deleteTitle(item.id);
+    if (!user) return;
+    deleteTitle(firestore, user.uid, item.id);
     toast({
       title: 'Title Deleted',
       description: `${item.title} has been removed from your lists.`,
       variant: 'destructive',
     });
-    onDataChange();
   };
 
 
@@ -294,7 +295,7 @@ export function AnimeCard({ item, onDataChange = () => {} }: AnimeCardProps) {
       <CardContent className="p-4 space-y-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {progress} /{' '}
+            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} /{' '}
             {item.total}
           </span>
           <span>{percentage.toFixed(0)}%</span>
@@ -308,19 +309,19 @@ export function AnimeCard({ item, onDataChange = () => {} }: AnimeCardProps) {
             size="icon"
             className="h-8 w-8"
             onClick={() => handleProgressChange(-1)}
-            disabled={progress <= 0}
+            disabled={item.progress <= 0}
           >
             <Minus className="h-4 w-4" />
           </Button>
           <div className="flex-1 text-center font-mono text-lg font-medium">
-            {progress}
+            {item.progress}
           </div>
           <Button
             variant="outline"
             size="icon"
             className="h-8 w-8"
             onClick={() => handleProgressChange(1)}
-            disabled={progress >= item.total}
+            disabled={item.progress >= item.total}
           >
             <Plus className="h-4 w-4" />
           </Button>

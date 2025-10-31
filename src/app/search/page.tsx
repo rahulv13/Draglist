@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState } from 'react';
+import { useFirestore, useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { SearchIcon, Plus } from 'lucide-react';
-import { getPopular, getSearchResults, addTitle } from '@/lib/data';
+import { addTitle, type Title } from '@/lib/data';
 import { AnimeCard } from '@/components/anime-card';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import {
@@ -31,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type FormValues = {
   title: string;
@@ -40,12 +43,48 @@ type FormValues = {
   imageUrl: string;
 };
 
+// Mock search results until a real search API is implemented
+const getSearchResults = (query: string): Title[] => {
+  if (!query) return [];
+  return PlaceHolderImages.filter(p => p.description.toLowerCase().includes(query.toLowerCase()) || p.imageHint.toLowerCase().includes(query.toLowerCase()))
+    .map(p => ({
+        id: p.id,
+        title: p.description,
+        type: 'Anime', // Mock
+        status: 'Planned', // Mock
+        progress: 0,
+        total: 12,
+        score: 0,
+        imageUrl: p.imageUrl,
+        imageHint: p.imageHint,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    }));
+}
+
+const getPopular = (): Title[] => {
+    return PlaceHolderImages.slice(0, 8).map(p => ({
+        id: p.id,
+        title: p.description,
+        type: 'Anime', // Mock
+        status: 'Planned', // Mock
+        progress: 0,
+        total: 12,
+        score: 0,
+        imageUrl: p.imageUrl,
+        imageHint: p.imageHint,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    }));
+}
+
+
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  
-  const [listVersion, setListVersion] = useState(0);
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const popular = getPopular();
   const searchResults = getSearchResults(query);
@@ -61,11 +100,13 @@ export default function SearchPage() {
       imageUrl: '',
     },
   });
-  
-  const refresh = () => setListVersion(v => v + 1);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
-    addTitle({
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a title.' });
+        return;
+    }
+    addTitle(firestore, user.uid, {
         ...data,
         total: Number(data.total)
     });
@@ -75,7 +116,6 @@ export default function SearchPage() {
     })
     form.reset();
     setOpen(false);
-    refresh();
   };
 
   return (
@@ -116,7 +156,7 @@ export default function SearchPage() {
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
+                      <FormLabel>Image URL (Optional)</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com/image.jpg" {...field} />
                       </FormControl>
@@ -201,7 +241,7 @@ export default function SearchPage() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
         {itemsToShow.map((item) => (
-          <AnimeCard key={`${item.id}-${listVersion}`} item={item} onDataChange={refresh} />
+          <AnimeCard key={item.id} item={item} />
         ))}
       </div>
       {query && itemsToShow.length === 0 && (

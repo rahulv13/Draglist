@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Firestore Security Rules for the RahulList application.
  *
@@ -41,6 +42,15 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
       allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isSignedIn() && isExistingOwner(userId);
+
+      /**
+       * @description Controls access to a user's anime and manga titles.
+       * @path /users/{userId}/titles/{titleId}
+       * @principle Enforces that only the owner of the parent user document can manage titles.
+       */
+      match /titles/{titleId} {
+        allow read, write: if isSignedIn() && isOwner(userId);
+      }
     }
 
     // --- Helper Functions ---
