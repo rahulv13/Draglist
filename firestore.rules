@@ -49,7 +49,10 @@ service cloud.firestore {
        * @principle Enforces that only the owner of the parent user document can manage titles.
        */
       match /titles/{titleId} {
-        allow read, write: if isSignedIn() && isOwner(userId);
+        allow read: if isSignedIn() && isOwner(userId);
+        allow create: if isSignedIn() && isOwner(userId);
+        allow update: if isSignedIn() && isOwner(userId) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isSignedIn() && isOwner(userId);
       }
     }
 
