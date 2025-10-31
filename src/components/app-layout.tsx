@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -73,7 +72,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       return user.email.charAt(0).toUpperCase();
     }
     return 'R';
-  }
+  };
 
   // Hide layout for auth pages
   if (pathname === '/login' || pathname === '/register') {
@@ -93,9 +92,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton
-                    as="a"
                     isActive={pathname === item.href}
                     tooltip={item.label}
                   >
@@ -112,16 +110,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <DropdownMenuTrigger asChild>
               <button className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.photoURL || ''} data-ai-hint="profile person" />
+                  <AvatarImage
+                    src={user?.photoURL || ''}
+                    data-ai-hint="profile person"
+                  />
                   <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
                 </Avatar>
-                <span className="truncate">{user?.displayName || user?.email || 'Rahul'}</span>
+                <span className="truncate">
+                  {user?.displayName || user?.email || 'Rahul'}
+                </span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.displayName || 'Anonymous User'}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.displayName || 'Anonymous User'}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || 'No email provided'}
                   </p>
