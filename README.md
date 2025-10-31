@@ -1,4 +1,4 @@
-# Firebase Studio
+# RahulList
 
 This is a NextJS starter in Firebase Studio.
 
