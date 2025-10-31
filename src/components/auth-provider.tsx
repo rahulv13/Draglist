@@ -17,7 +17,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (isUserLoading) return; // Wait for user status to be resolved
 
-    const isAuthPage = pathname === '/login';
+    const isAuthPage = pathname === '/login' || pathname === '/register';
 
     if (!user && !isAuthPage) {
       router.push('/login');
@@ -26,7 +26,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [user, isUserLoading, router, pathname]);
 
-  if (isUserLoading || (!user && pathname !== '/login') || (user && pathname === '/login')) {
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+
+  if (isUserLoading || (!user && !isAuthPage) || (user && isAuthPage)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">

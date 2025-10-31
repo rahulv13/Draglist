@@ -75,8 +75,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return 'R';
   }
 
-  // Hide layout for login page
-  if (pathname === '/login') {
+  // Hide layout for auth pages
+  if (pathname === '/login' || pathname === '/register') {
     return <>{children}</>;
   }
 
@@ -93,8 +93,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
+                <Link href={item.href} legacyBehavior passHref>
                   <SidebarMenuButton
+                    as="a"
                     isActive={pathname === item.href}
                     tooltip={item.label}
                   >
