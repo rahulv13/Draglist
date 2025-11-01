@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFirestore, useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { fetchTitleInfo } from '@/ai/flows/fetch-title-info-flow';
+import { fetchTopTitles, type FetchTopTitlesOutput } from '@/ai/flows/fetch-top-titles-flow';
 import { Label } from '@/components/ui/label';
 import {
   Carousel,
@@ -43,6 +44,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type FormValues = {
   title: string;
@@ -76,50 +78,44 @@ const getSearchResults = (query: string): Title[] => {
   }));
 };
 
-const getTopAnime = (): Title[] => {
-    return PlaceHolderImages.filter(p => p.description.toLowerCase().includes('anime')).slice(0, 5).map(p => ({
-        id: p.id,
-        title: p.description,
-        type: 'Anime',
-        status: 'Planned', // Mock
-        progress: 0,
-        total: 12,
-        score: 0,
-        imageUrl: p.imageUrl,
-        imageHint: p.imageHint,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    }));
-};
-
-const getTopManga = (): Title[] => {
-    return PlaceHolderImages.filter(p => p.description.toLowerCase().includes('manga')).slice(0, 5).map(p => ({
-        id: p.id,
-        title: p.description,
-        type: 'Manga',
-        status: 'Planned', // Mock
-        progress: 0,
-        total: 12,
-        score: 0,
-        imageUrl: p.imageUrl,
-        imageHint: p.imageHint,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    }));
-};
-
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [urlToFetch, setUrlToFetch] = useState('');
+  const [topAnime, setTopAnime] = useState<FetchTopTitlesOutput | null>(null);
+  const [topManga, setTopManga] = useState<FetchTopTitlesOutput | null>(null);
+  const [isLoadingTop, setIsLoadingTop] = useState(true);
+
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const topAnime = getTopAnime();
-  const topManga = getTopManga();
+  useEffect(() => {
+    const getTopTitles = async () => {
+      setIsLoadingTop(true);
+      try {
+        const [animeRes, mangaRes] = await Promise.all([
+          fetchTopTitles({ url: 'https://anikai.to/home', type: 'Anime' }),
+          fetchTopTitles({ url: 'https://asuracomic.net/', type: 'Manga' }),
+        ]);
+        setTopAnime(animeRes);
+        setTopManga(mangaRes);
+      } catch (error) {
+        console.error("Failed to fetch top titles:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not fetch top anime and manga lists.",
+        })
+      } finally {
+        setIsLoadingTop(false);
+      }
+    };
+    getTopTitles();
+  }, [toast]);
+
   const searchResults = getSearchResults(query);
   
   const form = useForm<FormValues>({
@@ -139,7 +135,7 @@ export default function SearchPage() {
     }
     addTitle(firestore, user.uid, {
         ...data,
-        total: Number(data.total)
+        total: Number(data.total) || 0
     });
     toast({
         title: "Title Added",
@@ -168,6 +164,48 @@ export default function SearchPage() {
     } finally {
         setIsFetching(false);
     }
+  }
+
+  const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga') => {
+    return (
+      <div>
+        <h3 className="text-2xl font-bold tracking-tight mb-4">{title}</h3>
+        <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }}>
+          <CarouselContent>
+            {isLoadingTop || !items ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <CarouselItem key={index} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                   <div className="space-y-2">
+                        <Skeleton className="h-[300px] w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                    </div>
+                </CarouselItem>
+              ))
+            ) : (
+              items.map((item, index) => (
+                <CarouselItem key={index} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                  <AnimeCard item={{
+                      id: `${type}-${index}`,
+                      title: item.title,
+                      imageUrl: item.imageUrl,
+                      type: type,
+                      status: 'Planned',
+                      progress: 0,
+                      total: 1, // Avoid division by zero
+                      score: 0,
+                      imageHint: '',
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                  }} />
+                </CarouselItem>
+              ))
+            )}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+      </div>
+    );
   }
 
   return (
@@ -267,7 +305,7 @@ export default function SearchPage() {
                                 <FormItem>
                                 <FormLabel>Total Ep/Ch</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
+                                    <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10) || 0)}/>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -332,34 +370,8 @@ export default function SearchPage() {
         </>
       ) : (
         <div className="space-y-8 pt-4">
-          <div>
-            <h3 className="text-2xl font-bold tracking-tight mb-4">Top 5 Anime</h3>
-            <Carousel opts={{ align: "start", loop: true }}>
-              <CarouselContent>
-                {topAnime.map((item) => (
-                  <CarouselItem key={item.id} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                    <AnimeCard item={item} />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold tracking-tight mb-4">Top 5 Manga</h3>
-            <Carousel opts={{ align: "start", loop: true }}>
-              <CarouselContent>
-                {topManga.map((item) => (
-                  <CarouselItem key={item.id} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                    <AnimeCard item={item} />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </div>
+          {renderTopCarousel("Top 5 Anime", topAnime, 'Anime')}
+          {renderTopCarousel("Top 5 Manga", topManga, 'Manga')}
         </div>
       )}
     </div>
