@@ -90,18 +90,16 @@ export function AnimeCard({ item }: AnimeCardProps) {
     const newProgress = Math.max(0, Math.min(item.progress + increment, item.total));
     const updatedFields: Partial<Title> = { progress: newProgress };
 
-    // Determine the new status based on progress
     if (newProgress >= item.total) {
       updatedFields.status = 'Completed';
     } else if (newProgress > 0) {
-       // If it was planned or completed, move it to watching/reading. 
-       if (item.status === 'Planned' || item.status === 'Completed') {
-         updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
-       }
-    } else { // newProgress is 0, it should be planned
-       updatedFields.status = 'Planned';
+      if (item.status === 'Planned' || item.status === 'Completed') {
+        updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
+      }
+    } else { // newProgress is 0
+      updatedFields.status = 'Planned';
     }
-
+    
     updateTitle(firestore, user.uid, item.id, updatedFields);
   };
   
