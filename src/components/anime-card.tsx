@@ -89,8 +89,17 @@ export function AnimeCard({ item }: AnimeCardProps) {
     let newProgress = item.progress + increment;
     if (newProgress < 0) newProgress = 0;
     if (newProgress > item.total) newProgress = item.total;
+
+    const updatedFields: Partial<Title> = { progress: newProgress };
+
+    // Automatically update status based on progress
+    if (newProgress === item.total) {
+      updatedFields.status = 'Completed';
+    } else if (item.status === 'Completed' && newProgress < item.total) {
+      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
+    }
     
-    updateTitle(firestore, user.uid, item.id, { progress: newProgress });
+    updateTitle(firestore, user.uid, item.id, updatedFields);
   };
   
   const handleEditSubmit: SubmitHandler<FormValues> = (data) => {
