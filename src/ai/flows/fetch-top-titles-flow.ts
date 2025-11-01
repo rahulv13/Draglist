@@ -34,13 +34,17 @@ const prompt = ai.definePrompt({
   name: 'fetchTopTitlesPrompt',
   input: { schema: FetchTopTitlesInputSchema },
   output: { schema: FetchTopTitlesOutputSchema },
-  prompt: `You are a web scraping expert specializing in anime and manga websites. Your task is to visit the provided URL and identify the top 5 most popular or trending titles of the specified type.
+  prompt: `You are a web scraping expert specializing in anime and manga websites. Your task is to visit the provided URL and identify the top 5 titles based on the media type.
 
 You must extract the following details for each of the top 5 titles:
 1.  **Title**: The official title of the series.
 2.  **Image URL**: The direct, absolute URL for the cover image.
 
-Visit the URL provided, find the section for top/trending/popular titles, and return the information for the top 5 in the specified JSON array format.
+Visit the URL provided and return the information in the specified JSON array format.
+
+- If the type is **Manga**, find the section for "Popular" titles and get the data from the **"All"** or **"All-Time"** tab within that section.
+- If the type is **Anime**, find the section for top/trending/popular titles.
+
 
 URL: {{{url}}}
 Type: {{{type}}}`,
