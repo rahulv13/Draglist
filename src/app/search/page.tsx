@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { fetchTitleInfo } from '@/ai/flows/fetch-title-info-flow';
+import { Label } from '@/components/ui/label';
 
 type FormValues = {
   title: string;
