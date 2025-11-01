@@ -86,10 +86,11 @@ export function AnimeCard({ item }: AnimeCardProps) {
 
   const handleProgressChange = (increment: number) => {
     if (!user) return;
-
+  
     const newProgress = Math.max(0, Math.min(item.progress + increment, item.total));
     const updatedFields: Partial<Title> = { progress: newProgress };
-
+  
+    // Determine the new status based on the progress
     if (newProgress >= item.total) {
       updatedFields.status = 'Completed';
     } else if (newProgress > 0) {
