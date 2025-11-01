@@ -100,7 +100,7 @@ export default function DashboardPage() {
     { name: 'Jun', anime: 0, manga: 0 },
   ];
 
-  const iconMap = {
+  const iconMap: { [key: string]: React.ReactNode } = {
     'Anime Watched': <Film className="h-6 w-6 text-muted-foreground" />,
     'Manga Read': <BookOpen className="h-6 w-6 text-muted-foreground" />,
     'Episodes Watched': <Clapperboard className="h-6 w-6 text-muted-foreground" />,
@@ -121,7 +121,7 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium">
                 {stat.label}
               </CardTitle>
-              {iconMap[stat.label as keyof typeof iconMap]}
+              {iconMap[stat.label]}
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{isLoading ? '...' : stat.value}</div>
