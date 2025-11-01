@@ -91,12 +91,15 @@ export function AnimeCard({ item }: AnimeCardProps) {
     if (newProgress > item.total) newProgress = item.total;
 
     const updatedFields: Partial<Title> = { progress: newProgress };
+    const newStatus = item.type === 'Anime' ? 'Watching' : 'Reading';
 
     // Automatically update status based on progress
-    if (newProgress === item.total) {
+    if (newProgress > 0 && newProgress < item.total && item.status === 'Planned') {
+      updatedFields.status = newStatus;
+    } else if (newProgress === item.total && item.status !== 'Completed') {
       updatedFields.status = 'Completed';
-    } else if (item.status === 'Completed' && newProgress < item.total) {
-      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
+    } else if (newProgress < item.total && item.status === 'Completed') {
+      updatedFields.status = newStatus;
     }
     
     updateTitle(firestore, user.uid, item.id, updatedFields);
@@ -236,7 +239,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="Watching">Watching</SelectItem>
