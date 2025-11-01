@@ -86,20 +86,24 @@ export function AnimeCard({ item }: AnimeCardProps) {
   
   const handleProgressChange = (increment: number) => {
     if (!user) return;
+    
     let newProgress = item.progress + increment;
-    if (newProgress < 0) newProgress = 0;
-    if (newProgress > item.total) newProgress = item.total;
+    if (newProgress < 0) {
+      newProgress = 0;
+    }
+    if (newProgress > item.total) {
+      newProgress = item.total;
+    }
 
     const updatedFields: Partial<Title> = { progress: newProgress };
-    const newStatus = item.type === 'Anime' ? 'Watching' : 'Reading';
-
+    
     // Automatically update status based on progress
-    if (newProgress > 0 && newProgress < item.total && item.status === 'Planned') {
-      updatedFields.status = newStatus;
+    if (item.status === 'Planned' && newProgress > 0) {
+      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
     } else if (newProgress === item.total && item.status !== 'Completed') {
       updatedFields.status = 'Completed';
     } else if (newProgress < item.total && item.status === 'Completed') {
-      updatedFields.status = newStatus;
+      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
     }
     
     updateTitle(firestore, user.uid, item.id, updatedFields);
