@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'static.anikai.to',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   devIndicators: {
