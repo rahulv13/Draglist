@@ -36,6 +36,13 @@ import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { fetchTitleInfo } from '@/ai/flows/fetch-title-info-flow';
 import { Label } from '@/components/ui/label';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 type FormValues = {
   title: string;
@@ -57,7 +64,7 @@ const getSearchResults = (query: string): Title[] => {
   ).map(p => ({
       id: p.id,
       title: p.description,
-      type: 'Anime', // Mock
+      type: p.description.toLowerCase().includes('manga') ? 'Manga' : 'Anime',
       status: 'Planned', // Mock
       progress: 0,
       total: 12,
@@ -69,11 +76,27 @@ const getSearchResults = (query: string): Title[] => {
   }));
 };
 
-const getPopular = (): Title[] => {
-    return PlaceHolderImages.slice(0, 10).map(p => ({
+const getTopAnime = (): Title[] => {
+    return PlaceHolderImages.filter(p => p.description.toLowerCase().includes('anime')).slice(0, 5).map(p => ({
         id: p.id,
         title: p.description,
-        type: 'Anime', // Mock
+        type: 'Anime',
+        status: 'Planned', // Mock
+        progress: 0,
+        total: 12,
+        score: 0,
+        imageUrl: p.imageUrl,
+        imageHint: p.imageHint,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    }));
+};
+
+const getTopManga = (): Title[] => {
+    return PlaceHolderImages.filter(p => p.description.toLowerCase().includes('manga')).slice(0, 5).map(p => ({
+        id: p.id,
+        title: p.description,
+        type: 'Manga',
         status: 'Planned', // Mock
         progress: 0,
         total: 12,
@@ -95,17 +118,16 @@ export default function SearchPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const popular = getPopular();
+  const topAnime = getTopAnime();
+  const topManga = getTopManga();
   const searchResults = getSearchResults(query);
-
-  const itemsToShow = query ? searchResults : popular;
   
   const form = useForm<FormValues>({
     defaultValues: {
       title: '',
       type: 'Anime',
       status: 'Planned',
-      total: 1,
+      total: 0,
       imageUrl: '',
     },
   });
@@ -137,7 +159,7 @@ export default function SearchPage() {
         const info = await fetchTitleInfo({ url: urlToFetch });
         form.setValue('title', info.title);
         form.setValue('imageUrl', info.imageUrl);
-        form.setValue('total', info.total > 0 ? info.total : 1);
+        form.setValue('total', info.total > 0 ? info.total : 0);
         form.setValue('type', info.type);
         toast({ title: 'Success', description: 'Information fetched successfully!' });
     } catch (error) {
@@ -240,7 +262,7 @@ export default function SearchPage() {
                         <FormField
                             control={form.control}
                             name="total"
-                            rules={{ required: 'Total is required', min: { value: 1, message: 'Must be at least 1' } }}
+                            rules={{ required: 'Total is required', min: { value: 0, message: 'Must be at least 0' } }}
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Total Ep/Ch</FormLabel>
@@ -292,18 +314,56 @@ export default function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
-        {itemsToShow.map((item) => (
-          <AnimeCard key={item.id} item={item} />
-        ))}
-      </div>
-      {query && itemsToShow.length === 0 && (
-        <div className="text-center col-span-full py-16">
-          <p className="text-muted-foreground">
-            No results found for "{query}".
-          </p>
+
+      {query ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
+            {searchResults.map((item) => (
+              <AnimeCard key={item.id} item={item} />
+            ))}
+          </div>
+          {searchResults.length === 0 && (
+            <div className="text-center col-span-full py-16">
+              <p className="text-muted-foreground">
+                No results found for "{query}".
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-8 pt-4">
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight mb-4">Top 5 Anime</h3>
+            <Carousel opts={{ align: "start", loop: true }}>
+              <CarouselContent>
+                {topAnime.map((item) => (
+                  <CarouselItem key={item.id} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                    <AnimeCard item={item} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight mb-4">Top 5 Manga</h3>
+            <Carousel opts={{ align: "start", loop: true }}>
+              <CarouselContent>
+                {topManga.map((item) => (
+                  <CarouselItem key={item.id} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                    <AnimeCard item={item} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+    
