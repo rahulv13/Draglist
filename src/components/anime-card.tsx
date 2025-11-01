@@ -83,29 +83,25 @@ export function AnimeCard({ item }: AnimeCardProps) {
       score: item.score,
     },
   });
-  
+
   const handleProgressChange = (increment: number) => {
     if (!user) return;
-    
-    let newProgress = item.progress + increment;
-    if (newProgress < 0) {
-      newProgress = 0;
-    }
-    if (newProgress > item.total) {
-      newProgress = item.total;
+
+    const newProgress = Math.max(0, Math.min(item.progress + increment, item.total));
+    const updatedFields: Partial<Title> = { progress: newProgress };
+
+    // Determine the new status based on progress
+    if (newProgress === item.total) {
+      updatedFields.status = 'Completed';
+    } else if (newProgress > 0) {
+      // If it was planned, move it to watching/reading. Otherwise, keep current status unless completed.
+      if (item.status === 'Planned' || item.status === 'Completed') {
+         updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
+      }
+    } else { // newProgress is 0
+      updatedFields.status = 'Planned';
     }
 
-    const updatedFields: Partial<Title> = { progress: newProgress };
-    
-    // Automatically update status based on progress
-    if (item.status === 'Planned' && newProgress > 0) {
-      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
-    } else if (newProgress === item.total && item.status !== 'Completed') {
-      updatedFields.status = 'Completed';
-    } else if (newProgress < item.total && item.status === 'Completed') {
-      updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
-    }
-    
     updateTitle(firestore, user.uid, item.id, updatedFields);
   };
   
@@ -128,7 +124,6 @@ export function AnimeCard({ item }: AnimeCardProps) {
       variant: 'destructive',
     });
   };
-
 
   return (
     <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
