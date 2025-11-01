@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { SearchIcon, Plus } from 'lucide-react';
+import { SearchIcon, Plus, Loader2, Wand2 } from 'lucide-react';
 import { addTitle, type Title } from '@/lib/data';
 import { AnimeCard } from '@/components/anime-card';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { fetchTitleInfo } from '@/ai/flows/fetch-title-info-flow';
 
 type FormValues = {
   title: string;
@@ -82,6 +83,8 @@ const getPopular = (): Title[] => {
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [urlToFetch, setUrlToFetch] = useState('');
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -96,7 +99,7 @@ export default function SearchPage() {
       title: '',
       type: 'Anime',
       status: 'Planned',
-      total: 12,
+      total: 1,
       imageUrl: '',
     },
   });
@@ -118,6 +121,27 @@ export default function SearchPage() {
     setOpen(false);
   };
 
+  const handleFetchInfo = async () => {
+    if (!urlToFetch) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please enter a URL to fetch.' });
+        return;
+    }
+    setIsFetching(true);
+    try {
+        const info = await fetchTitleInfo({ url: urlToFetch });
+        form.setValue('title', info.title);
+        form.setValue('imageUrl', info.imageUrl);
+        form.setValue('total', info.total > 0 ? info.total : 1);
+        form.setValue('type', info.type);
+        toast({ title: 'Success', description: 'Information fetched successfully!' });
+    } catch (error) {
+        console.error('Failed to fetch title info:', error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch information from the URL.' });
+    } finally {
+        setIsFetching(false);
+    }
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -128,104 +152,127 @@ export default function SearchPage() {
               <Plus className="mr-2 h-4 w-4" /> Add New Title
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add a new title</DialogTitle>
               <DialogDescription>
-                Enter the details for the new anime or manga.
+                Enter a URL to auto-fill details, or add them manually.
               </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  rules={{ required: 'Title is required' }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Void Specter" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Anime">Anime</SelectItem>
-                          <SelectItem value="Manga">Manga</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                     <FormItem>
-                      <FormLabel>Status</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Watching">Watching</SelectItem>
-                           <SelectItem value="Reading">Reading</SelectItem>
-                          <SelectItem value="Planned">Planned</SelectItem>
-                           <SelectItem value="Completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="fetch-url">Fetch from URL</Label>
+                    <div className="flex items-center gap-2">
+                        <Input id="fetch-url" placeholder="https://myanimelist.net/..." value={urlToFetch} onChange={(e) => setUrlToFetch(e.target.value)} disabled={isFetching}/>
+                        <Button onClick={handleFetchInfo} disabled={isFetching} size="icon">
+                            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                            <span className="sr-only">Fetch Info</span>
+                        </Button>
+                    </div>
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="total"
-                  rules={{ required: 'Total is required', min: { value: 1, message: 'Must be at least 1' } }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Episodes/Chapters</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit">Add Title</Button>
-              </form>
-            </Form>
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or add manually</span>
+                    </div>
+                </div>
+
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                    control={form.control}
+                    name="title"
+                    rules={{ required: 'Title is required' }}
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g. Void Specter" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://example.com/image.jpg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="type"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a type" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Anime">Anime</SelectItem>
+                                    <SelectItem value="Manga">Manga</SelectItem>
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="total"
+                            rules={{ required: 'Total is required', min: { value: 1, message: 'Must be at least 1' } }}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Total Ep/Ch</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a status" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Watching">Watching</SelectItem>
+                                <SelectItem value="Reading">Reading</SelectItem>
+                                <SelectItem value="Planned">Planned</SelectItem>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                        />
+                    <Button type="submit" className="w-full">Add Title</Button>
+                </form>
+                </Form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
