@@ -48,24 +48,29 @@ type FormValues = {
 // Mock search results until a real search API is implemented
 const getSearchResults = (query: string): Title[] => {
   if (!query) return [];
-  return PlaceHolderImages.filter(p => p.description.toLowerCase().includes(query.toLowerCase()) || p.imageHint.toLowerCase().includes(query.toLowerCase()))
-    .map(p => ({
-        id: p.id,
-        title: p.description,
-        type: 'Anime', // Mock
-        status: 'Planned', // Mock
-        progress: 0,
-        total: 12,
-        score: 0,
-        imageUrl: p.imageUrl,
-        imageHint: p.imageHint,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    }));
-}
+  const queryWords = query.toLowerCase().split(' ');
+  return PlaceHolderImages.filter(p => 
+    queryWords.every(word => 
+      p.description.toLowerCase().includes(word) || 
+      p.imageHint.toLowerCase().includes(word)
+    )
+  ).map(p => ({
+      id: p.id,
+      title: p.description,
+      type: 'Anime', // Mock
+      status: 'Planned', // Mock
+      progress: 0,
+      total: 12,
+      score: 0,
+      imageUrl: p.imageUrl,
+      imageHint: p.imageHint,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+  }));
+};
 
 const getPopular = (): Title[] => {
-    return PlaceHolderImages.slice(0, 8).map(p => ({
+    return PlaceHolderImages.slice(0, 10).map(p => ({
         id: p.id,
         title: p.description,
         type: 'Anime', // Mock
@@ -78,7 +83,7 @@ const getPopular = (): Title[] => {
         createdAt: new Date(),
         updatedAt: new Date(),
     }));
-}
+};
 
 
 export default function SearchPage() {
@@ -202,7 +207,7 @@ export default function SearchPage() {
                     name="imageUrl"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Image URL</FormLabel>
+                        <FormLabel>Image URL (Optional)</FormLabel>
                         <FormControl>
                             <Input placeholder="https://example.com/image.jpg" {...field} />
                         </FormControl>

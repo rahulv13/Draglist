@@ -15,6 +15,7 @@ import {
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
 } from '@/firebase';
+import { PlaceHolderImages } from './placeholder-images';
 
 export type Title = {
   id: string;
@@ -39,15 +40,16 @@ export const addTitle = (
     throw new Error('User must be logged in to add a title.');
   }
   const titlesCollection = collection(firestore, 'users', userId, 'titles');
-  const newId = doc(titlesCollection).id;
+  
+  const randomPlaceholder = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
 
   const data = {
     ...newTitleData,
     progress: 0,
     score: 0,
     imageUrl:
-      newTitleData.imageUrl || `https://picsum.photos/seed/${newId}/400/600`,
-    imageHint: newTitleData.title.split(' ').slice(0, 2).join(' ').toLowerCase(),
+      newTitleData.imageUrl || randomPlaceholder.imageUrl,
+    imageHint: newTitleData.imageUrl ? newTitleData.title.split(' ').slice(0, 2).join(' ').toLowerCase() : randomPlaceholder.imageHint,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
