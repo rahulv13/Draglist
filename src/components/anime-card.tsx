@@ -263,7 +263,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                       <FormItem>
                         <FormLabel>Total Episodes/Chapters</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                          <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -277,7 +277,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                       <FormItem>
                         <FormLabel>Score</FormLabel>
                         <FormControl>
-                           <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                           <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -245,7 +245,7 @@ export default function SearchPage() {
                                 <FormItem>
                                 <FormLabel>Total Ep/Ch</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
+                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
