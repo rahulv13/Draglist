@@ -98,7 +98,9 @@ export function AnimeCard({ item }: AnimeCardProps) {
         updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
       }
     } else { // newProgress is 0
-      updatedFields.status = 'Planned';
+      if (item.status !== 'Planned') {
+          updatedFields.status = 'Planned';
+      }
     }
     
     updateTitle(firestore, user.uid, item.id, updatedFields);
@@ -237,7 +239,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="Watching">Watching</SelectItem>
