@@ -49,15 +49,7 @@ const nextConfig: NextConfig = {
     ],
   },
   devIndicators: {
-    buildActivity: true,
-    buildActivityPosition: 'bottom-right',
-  },
-  experimental: {
-    // This is the correct way to configure allowed origins for development.
-    // It accepts an array of strings.
-    allowedDevOrigins: [
-      'https://6000-firebase-studio-1761847776006.cluster-aic6jbiihrhmyrqafasatvzbwe.cloudworkstations.dev',
-    ],
+    position: 'bottom-right',
   },
 };
 
