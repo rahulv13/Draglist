@@ -47,7 +47,10 @@ const prompt = ai.definePrompt({
 You must extract the following details:
 1.  **Title**: The official title of the series.
 2.  **Image URL**: The direct, absolute URL for the cover image.
-3.  **Total**: The total number of episodes or chapters. If the series is ongoing, still airing, or the total count is not clearly stated, you must return 1.
+3.  **Total**: The total number of episodes or chapters.
+    - If the page lists multiple seasons, **extract the episode count for the FIRST season only**.
+    - If the title is a movie, return 1.
+    - If the series is ongoing, still airing, or the total count is not clearly stated, you must return 1.
 4.  **Type**: Determine if it is an "Anime" or a "Manga".
 
 Visit the URL provided and return the information in the specified JSON format.
