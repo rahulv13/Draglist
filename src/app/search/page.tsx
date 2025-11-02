@@ -106,8 +106,8 @@ export default function SearchPage() {
         console.error("Failed to fetch top titles:", error);
         toast({
             variant: "destructive",
-            title: "Error",
-            description: "Could not fetch top anime and manga lists.",
+            title: "Error fetching popular titles",
+            description: "Could not fetch top anime and manga lists. This may be due to API rate limits.",
         })
       } finally {
         setIsLoadingTop(false);
@@ -169,7 +169,7 @@ export default function SearchPage() {
   const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga') => {
     return (
       <div>
-        <h3 className="text-2xl font-bold tracking-tight mb-4">{title}</h3>
+        <h3 class="text-2xl font-bold tracking-tight mb-4">{title}</h3>
         <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }}>
           <CarouselContent>
             {isLoadingTop || !items ? (
@@ -377,3 +377,5 @@ export default function SearchPage() {
     </div>
   );
 }
+
+    
