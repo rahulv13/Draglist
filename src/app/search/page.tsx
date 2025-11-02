@@ -169,7 +169,7 @@ export default function SearchPage() {
   const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga') => {
     return (
       <div>
-        <h3 class="text-2xl font-bold tracking-tight mb-4">{title}</h3>
+        <h3 className="text-2xl font-bold tracking-tight mb-4">{title}</h3>
         <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }}>
           <CarouselContent>
             {isLoadingTop || !items ? (
