@@ -110,7 +110,7 @@ export default function SearchPage() {
         toast({
             variant: "destructive",
             title: "Error fetching popular titles",
-            description: "Could not fetch top anime and manga lists from Anilist.",
+            description: "Could not fetch top anime and manga lists.",
         })
       } finally {
         setIsLoadingTop(false);
