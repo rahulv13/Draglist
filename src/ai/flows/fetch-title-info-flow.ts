@@ -1,15 +1,15 @@
 
 'use server';
 /**
- * @fileOverview An AI flow to extract anime/manga information from a URL.
+ * @fileOverview A hybrid scraper to extract anime/manga information from a URL.
  *
  * - fetchTitleInfo - A function that takes a URL and returns structured data about a title.
  * - FetchTitleInfoInput - The input type for the fetchTitleInfo function.
  * - FetchTitleInfoOutput - The return type for the fetchTitleInfo function.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import * as cheerio from 'cheerio';
 
 const FetchTitleInfoInputSchema = z.object({
   url: z.string().url().describe('The URL of the anime or manga page.'),
@@ -17,61 +17,80 @@ const FetchTitleInfoInputSchema = z.object({
 export type FetchTitleInfoInput = z.infer<typeof FetchTitleInfoInputSchema>;
 
 const FetchTitleInfoOutputSchema = z.object({
-  title: z
-    .string()
-    .describe('The full title of the anime or manga.'),
-  imageUrl: z
-    .string()
-    .url()
-    .describe("The direct URL to the title's cover image."),
-  total: z
-    .number()
-    .describe('The total number of episodes (for anime) or chapters (for manga). If it is ongoing or unknown, return the latest available chapter/episode number.'),
-  type: z
-    .enum(['Anime', 'Manga'])
-    .describe('The type of media.'),
+  title: z.string(),
+  imageUrl: z.string().url(),
+  total: z.number(),
+  type: z.enum(['Anime', 'Manga']),
 });
 export type FetchTitleInfoOutput = z.infer<typeof FetchTitleInfoOutputSchema>;
 
 export async function fetchTitleInfo(
   input: FetchTitleInfoInput
 ): Promise<FetchTitleInfoOutput> {
-  return fetchTitleInfoFlow(input);
-}
+  try {
+    const response = await fetch(input.url, {
+      headers: {
+        // Use a common user-agent to avoid being blocked
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
+    });
 
-const prompt = ai.definePrompt({
-  name: 'fetchTitleInfoPrompt',
-  input: { schema: FetchTitleInfoInputSchema },
-  output: { schema: FetchTitleInfoOutputSchema },
-  prompt: `You are a web scraping expert specializing in anime and manga websites. Your task is to extract specific information from the provided URL.
-
-You must extract the following details:
-1.  **Title**: The official title of the series.
-2.  **Image URL**: The direct, absolute URL for the cover image.
-3.  **Total**: The total number of episodes (for anime) or chapters (for manga).
-    - If the title is a manga, you MUST find the chapter list on the page and use the number of the **latest** available chapter as the total. Search for numbers directly adjacent to words like "Chapter", "Ch.", or "Ep.".
-    - If the page lists multiple anime seasons, **extract the episode count for the FIRST season only**.
-    - If the title is a movie, return 1.
-    - Ignore numbers found in titles, release years, or update timestamps.
-    - If, after checking all other conditions, the series is still airing or the total count is not clearly stated, you must return the highest episode or chapter number you can find, or return 1 if no number is found.
-4.  **Type**: Determine if it is an "Anime" or a "Manga".
-
-Visit the URL provided and return the information in the specified JSON format.
-
-URL: {{{url}}}`,
-});
-
-const fetchTitleInfoFlow = ai.defineFlow(
-  {
-    name: 'fetchTitleInfoFlow',
-    inputSchema: FetchTitleInfoInputSchema,
-    outputSchema: FetchTitleInfoOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    if (!output) {
-      throw new Error('Failed to extract title information from the URL.');
+    if (!response.ok) {
+        throw new Error(`Failed to fetch URL: ${response.statusText}`);
     }
-    return output;
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    // --- Try scraping title ---
+    let title =
+      $('meta[property="og:title"]').attr('content') ||
+      $('h1').first().text().trim() ||
+      $('title').first().text().trim() ||
+      'Unknown Title';
+
+    // --- Try scraping cover image ---
+    let imageUrl =
+      $('meta[property="og:image"]').attr('content') ||
+      $('img[src*="cover"], img[src*="poster"]').first().attr('src') ||
+      $('img').first().attr('src') ||
+      '';
+    
+    // Ensure imageUrl is absolute
+    if (imageUrl && !imageUrl.startsWith('http')) {
+        const urlObject = new URL(input.url);
+        imageUrl = `${urlObject.protocol}//${urlObject.hostname}${imageUrl}`;
+    }
+
+
+    // --- Try scraping episodes or chapters ---
+    const textContent = $('body').text();
+
+    const episodeMatches =
+      textContent.match(/(?:Episode|Ep\.|Chapter|Ch\.)\s?(\d+)/gi) || [];
+    const numbers = episodeMatches
+      .map((m) => parseInt(m.replace(/\D/g, ''), 10))
+      .filter((n) => !isNaN(n));
+
+    const total = numbers.length ? Math.max(...numbers) : 1;
+
+    // --- Determine type ---
+    const type =
+      input.url.includes('manga') ||
+      textContent.toLowerCase().includes('chapter')
+        ? 'Manga'
+        : 'Anime';
+
+    // Basic validation
+    if (!imageUrl) {
+        throw new Error('Could not find an image URL.');
+    }
+
+    return { title, imageUrl, total, type };
+  } catch (error: any) {
+    console.error('Error fetching title info:', error);
+    // Re-throw a simpler error to the client
+    throw new Error(`Failed to scrape title info from the provided URL. Reason: ${error.message}`);
   }
-);
+}
