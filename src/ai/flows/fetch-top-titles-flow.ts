@@ -8,8 +8,8 @@
  * - FetchTopTitlesOutput - The return type for the fetchTopTitles function.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import * as cheerio from 'cheerio';
 
 const FetchTopTitlesInputSchema = z.object({
   url: z.string().url().describe('The URL of the page listing top titles.'),
@@ -25,38 +25,32 @@ const TopTitleSchema = z.object({
 const FetchTopTitlesOutputSchema = z.array(TopTitleSchema).length(5).describe('A list of the top 5 titles found on the page.');
 export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
-const siteScrapers: { [key: string]: (html: string, baseUrl: string) => FetchTopTitlesOutput } = {
-  'anikai.to': (html, baseUrl) => {
-    const $ = cheerio.load(html);
-    const titles: { title: string; imageUrl: string }[] = [];
-    $('.swiper-slide-popular').slice(0, 5).each((_, el) => {
-        const title = $(el).find('.film-title a').text().trim();
-        let imageUrl = $(el).find('.film-poster-img').attr('data-src') || '';
-        if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = new URL(imageUrl, baseUrl).href;
-        }
-        if (title && imageUrl) {
-            titles.push({ title, imageUrl });
-        }
-    });
-    return titles as FetchTopTitlesOutput;
-  },
-  'asuracomic.net': (html, baseUrl) => {
-    const $ = cheerio.load(html);
-    const titles: { title: string; imageUrl: string }[] = [];
-    $('div.bsx').slice(0, 5).each((_, el) => {
-      const title = $(el).find('a').attr('title');
-      let imageUrl = $(el).find('img').attr('src') || '';
-       if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = new URL(imageUrl, baseUrl).href;
-        }
-      if (title && imageUrl) {
-        titles.push({ title, imageUrl });
-      }
-    });
-    return titles as FetchTopTitlesOutput;
-  }
-};
+const ScraperPromptInputSchema = z.object({
+    url: z.string().url(),
+    htmlContent: z.string(),
+    type: z.enum(['Anime', 'Manga']),
+});
+
+const prompt = ai.definePrompt({
+    name: 'fetchTopTitlesPrompt',
+    input: { schema: ScraperPromptInputSchema },
+    output: { schema: FetchTopTitlesOutputSchema },
+    prompt: `You are an expert web scraper. Your task is to analyze the provided HTML content and extract a list of the top 5 titles for the specified media type.
+
+URL: {{{url}}}
+Type: {{{type}}}
+
+HTML Content:
+\`\`\`html
+{{{htmlContent}}}
+\`\`\`
+
+You must extract the following details for the top 5 titles:
+1.  **title**: The official title of the series.
+2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
+
+Return the data as an array of 5 objects.`,
+});
 
 
 export async function fetchTopTitles(
@@ -74,23 +68,24 @@ export async function fetchTopTitles(
     }
 
     const htmlContent = await response.text();
-    const url = new URL(input.url);
-    const domain = url.hostname.replace('www.', '');
 
-    const scraper = siteScrapers[domain];
-
-    if (!scraper) {
-        throw new Error(`No scraper available for domain: ${domain}`);
+    const { output } = await prompt({
+        url: input.url,
+        htmlContent: htmlContent,
+        type: input.type,
+    });
+    
+    if (!output) {
+      throw new Error('AI model failed to return structured output from the HTML content.');
     }
 
-    const results = scraper(htmlContent, input.url);
-    
     // Ensure all imageUrls are absolute
-    const absoluteOutput = results.map(item => {
+    const absoluteOutput = output.map(item => {
       if (item.imageUrl && !item.imageUrl.startsWith('http')) {
+        const urlObject = new URL(input.url);
         return {
           ...item,
-          imageUrl: new URL(item.imageUrl, `${url.protocol}//${url.hostname}`).href
+          imageUrl: new URL(item.imageUrl, `${urlObject.protocol}//${urlObject.hostname}`).href
         };
       }
       return item;
@@ -99,7 +94,6 @@ export async function fetchTopTitles(
     return absoluteOutput;
   } catch (error: any) {
     console.error(`[fetchTopTitles] Failed to process URL ${input.url}:`, error);
-    // Return an empty array on failure so the UI doesn't break
-    return [];
+    throw new Error(`The AI failed to extract top titles from the URL. Reason: ${error.message}`);
   }
 }
