@@ -134,7 +134,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
           alt={`Cover for ${item.title}`}
           width={400}
           height={600}
-          className="w-full h-auto object-cover aspect-[2/3] transition-transform duration-300 group-hover:scale-105"
+          className="w-full object-cover aspect-[2/3] transition-transform duration-300 group-hover:scale-105"
           data-ai-hint={item.imageHint}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
