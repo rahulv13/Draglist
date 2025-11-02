@@ -81,6 +81,7 @@ const fetchFromAnilist = async (type: 'ANIME' | 'MANGA', format?: string): Promi
 
 const fetchFromOmegaScans = async (): Promise<FetchTopTitlesOutput> => {
     const url = 'https://omegascans.org/';
+    console.log(`[DEBUG] Fetching from OmegaScans: ${url}`);
     const res = await fetch(url, {
         headers: {
             'User-Agent':
@@ -94,15 +95,18 @@ const fetchFromOmegaScans = async (): Promise<FetchTopTitlesOutput> => {
 
     const html = await res.text();
     const $ = cheerio.load(html);
+    console.log(`[DEBUG] HTML loaded from OmegaScans. Length: ${html.length}`);
 
     const titles: FetchTopTitlesOutput = [];
-    $('.list-item > .list-item-style').each((i, el) => {
+    $('.list-item .list-item-style').each((i, el) => {
         if (i >= 5) return false; // stop after 5
 
         const a = $(el).find('a').first();
         const title = a.attr('title');
         const img = a.find('img').attr('src');
         
+        console.log(`[DEBUG] Scraping item ${i}: title='${title}', img='${img}'`);
+
         if(title && img){
             titles.push({
                 title,
@@ -111,6 +115,7 @@ const fetchFromOmegaScans = async (): Promise<FetchTopTitlesOutput> => {
         }
     });
 
+    console.log(`[DEBUG] Found ${titles.length} titles from OmegaScans.`);
     return titles;
 }
 
