@@ -136,6 +136,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
           height={600}
           className="w-full object-cover aspect-[2/3] transition-transform duration-300 group-hover:scale-105"
           data-ai-hint={item.imageHint}
+          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute top-2 right-2">
@@ -342,3 +343,5 @@ export function AnimeCard({ item }: AnimeCardProps) {
     </Card>
   );
 }
+
+    
