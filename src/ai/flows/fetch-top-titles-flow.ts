@@ -8,8 +8,8 @@
  * - FetchTopTitlesOutput - The return type for the fetchTopTitles function.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import * as cheerio from 'cheerio';
 
 const FetchTopTitlesInputSchema = z.object({
   url: z.string().url().describe('The URL of the page listing top titles.'),
@@ -22,35 +22,33 @@ const TopTitleSchema = z.object({
     imageUrl: z.string().url().describe("The direct, absolute URL to the title's cover image."),
 });
 
-const FetchTopTitlesOutputSchema = z.array(TopTitleSchema).length(5).describe('A list of the top 5 titles found on the page.');
+const FetchTopTitlesOutputSchema = z.array(TopTitleSchema).describe('A list of the top titles found on the page.');
 export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
-const ScraperPromptInputSchema = z.object({
-    url: z.string().url(),
-    htmlContent: z.string(),
-    type: z.enum(['Anime', 'Manga']),
-});
 
-const prompt = ai.definePrompt({
-    name: 'fetchTopTitlesPrompt',
-    input: { schema: ScraperPromptInputSchema },
-    output: { schema: FetchTopTitlesOutputSchema },
-    prompt: `You are an expert web scraper. Your task is to analyze the provided HTML content and extract a list of the top 5 titles for the specified media type.
+const scrapeAnikai = ($: cheerio.CheerioAPI): FetchTopTitlesOutput => {
+    const titles: FetchTopTitlesOutput = [];
+    $('.hl-list .hl-item').slice(0, 5).each((i, el) => {
+        const title = $(el).find('.hl-title').text().trim();
+        let imageUrl = $(el).find('.hl-cover img').attr('src') || '';
+        if (imageUrl) {
+            titles.push({ title, imageUrl });
+        }
+    });
+    return titles;
+};
 
-URL: {{{url}}}
-Type: {{{type}}}
-
-HTML Content:
-\`\`\`html
-{{{htmlContent}}}
-\`\`\`
-
-You must extract the following details for the top 5 titles:
-1.  **title**: The official title of the series.
-2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
-
-Return the data as an array of 5 objects.`,
-});
+const scrapeAsura = ($: cheerio.CheerioAPI): FetchTopTitlesOutput => {
+    const titles: FetchTopTitlesOutput = [];
+    $('.listupd .bs').slice(0, 5).each((i, el) => {
+        const title = $(el).find('.tt').text().trim();
+        let imageUrl = $(el).find('img').attr('src') || '';
+        if (imageUrl) {
+            titles.push({ title, imageUrl });
+        }
+    });
+    return titles;
+};
 
 
 export async function fetchTopTitles(
@@ -68,15 +66,17 @@ export async function fetchTopTitles(
     }
 
     const htmlContent = await response.text();
+    const $ = cheerio.load(htmlContent);
 
-    const { output } = await prompt({
-        url: input.url,
-        htmlContent: htmlContent,
-        type: input.type,
-    });
-    
-    if (!output) {
-      throw new Error('AI model failed to return structured output from the HTML content.');
+    let output: FetchTopTitlesOutput;
+
+    if (input.url.includes('anikai.to')) {
+        output = scrapeAnikai($);
+    } else if (input.url.includes('asuracomic.net')) {
+        output = scrapeAsura($);
+    } else {
+        // Generic fallback (less reliable)
+        output = [];
     }
 
     // Ensure all imageUrls are absolute
@@ -94,6 +94,6 @@ export async function fetchTopTitles(
     return absoluteOutput;
   } catch (error: any) {
     console.error(`[fetchTopTitles] Failed to process URL ${input.url}:`, error);
-    throw new Error(`The AI failed to extract top titles from the URL. Reason: ${error.message}`);
+    throw new Error(`The scraper failed to extract top titles from the URL. Reason: ${error.message}`);
   }
 }
