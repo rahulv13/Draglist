@@ -25,7 +25,7 @@ const FetchTitleInfoOutputSchema = z.object({
     .describe("The direct URL to the title's cover image."),
   total: z
     .number()
-    .describe('The total number of episodes (for anime) or chapters (for manga). If it is ongoing or unknown, return 0.'),
+    .describe('The total number of episodes (for anime) or chapters (for manga). If it is ongoing or unknown, return 1.'),
   type: z
     .enum(['Anime', 'Manga'])
     .describe('The type of media.'),
@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
 You must extract the following details:
 1.  **Title**: The official title of the series.
 2.  **Image URL**: The direct, absolute URL for the cover image.
-3.  **Total**: The total number of episodes or chapters. If the series is ongoing, still airing, or the total count is not clearly stated, you must return 0.
+3.  **Total**: The total number of episodes or chapters. If the series is ongoing, still airing, or the total count is not clearly stated, you must return 1.
 4.  **Type**: Determine if it is an "Anime" or a "Manga".
 
 Visit the URL provided and return the information in the specified JSON format.
