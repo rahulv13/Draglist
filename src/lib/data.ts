@@ -20,7 +20,7 @@ import { PlaceHolderImages } from './placeholder-images';
 export type Title = {
   id: string;
   title: string;
-  type: 'Anime' | 'Manga';
+  type: 'Anime' | 'Manga' | 'Manhwa';
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   progress: number;
   total: number;

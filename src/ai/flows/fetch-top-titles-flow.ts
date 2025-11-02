@@ -7,7 +7,7 @@
 import { z } from 'genkit';
 
 const FetchTopTitlesInputSchema = z.object({
-  type: z.enum(['ANIME', 'MANGA']).describe('The type of media to look for.'),
+  type: z.enum(['ANIME', 'MANGA', 'MANHWA']).describe('The type of media to look for.'),
 });
 export type FetchTopTitlesInput = z.infer<typeof FetchTopTitlesInputSchema>;
 
@@ -25,9 +25,9 @@ export async function fetchTopTitles(
   console.log(`[DEBUG] Fetching top ${input.type} from Anilist API`);
 
   const query = `
-    query ($type: MediaType, $sort: [MediaSort]) {
+    query ($type: MediaType, $sort: [MediaSort], $format: MediaFormat) {
       Page(page: 1, perPage: 5) {
-        media(type: $type, sort: $sort) {
+        media(type: $type, sort: $sort, format: $format) {
           title {
             romaji
             english
@@ -40,10 +40,15 @@ export async function fetchTopTitles(
     }
   `;
 
-  const variables = {
-    type: input.type,
+  const variables: { type: string, sort: string[], format?: string } = {
+    type: input.type === 'MANHWA' ? 'MANGA' : input.type, // Anilist treats Manhwa as Manga type
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
+
+  if (input.type === 'MANHWA') {
+    variables.format = 'MANHWA';
+  }
+
 
   try {
     const res = await fetch('https://graphql.anilist.co', {

@@ -44,7 +44,7 @@
         },
         "type": {
           "type": "string",
-          "enum": ["Anime", "Manga"],
+          "enum": ["Anime", "Manga", "Manhwa"],
           "description": "The type of media."
         },
         "status": {

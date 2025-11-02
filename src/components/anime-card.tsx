@@ -61,7 +61,7 @@ type AnimeCardProps = {
 
 type FormValues = {
   title: string;
-  type: 'Anime' | 'Manga';
+  type: 'Anime' | 'Manga' | 'Manhwa';
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   total: number;
   score: number;
@@ -221,6 +221,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                           <SelectContent>
                             <SelectItem value="Anime">Anime</SelectItem>
                             <SelectItem value="Manga">Manga</SelectItem>
+                            <SelectItem value="Manhwa">Manhwa</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -343,5 +344,3 @@ export function AnimeCard({ item }: AnimeCardProps) {
     </Card>
   );
 }
-
-    

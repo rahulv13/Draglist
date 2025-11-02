@@ -48,7 +48,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 type FormValues = {
   title: string;
-  type: 'Anime' | 'Manga';
+  type: 'Anime' | 'Manga' | 'Manhwa';
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   total: number;
   imageUrl: string;
@@ -86,6 +86,7 @@ export default function SearchPage() {
   const [urlToFetch, setUrlToFetch] = useState('');
   const [topAnime, setTopAnime] = useState<FetchTopTitlesOutput | null>(null);
   const [topManga, setTopManga] = useState<FetchTopTitlesOutput | null>(null);
+  const [topManhwa, setTopManhwa] = useState<FetchTopTitlesOutput | null>(null);
   const [isLoadingTop, setIsLoadingTop] = useState(true);
 
   const { toast } = useToast();
@@ -96,12 +97,14 @@ export default function SearchPage() {
     const getTopTitles = async () => {
       setIsLoadingTop(true);
       try {
-        const [animeRes, mangaRes] = await Promise.all([
+        const [animeRes, mangaRes, manhwaRes] = await Promise.all([
           fetchTopTitles({ type: 'ANIME' }),
           fetchTopTitles({ type: 'MANGA' }),
+          fetchTopTitles({ type: 'MANHWA' }),
         ]);
         setTopAnime(animeRes);
         setTopManga(mangaRes);
+        setTopManhwa(manhwaRes);
       } catch (error) {
         console.error("Failed to fetch top titles:", error);
         toast({
@@ -166,7 +169,7 @@ export default function SearchPage() {
     }
   }
 
-  const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga') => {
+  const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga' | 'Manhwa') => {
     return (
       <div>
         <h3 className="text-2xl font-bold tracking-tight mb-4">{title}</h3>
@@ -291,6 +294,7 @@ export default function SearchPage() {
                                 <SelectContent>
                                     <SelectItem value="Anime">Anime</SelectItem>
                                     <SelectItem value="Manga">Manga</SelectItem>
+                                    <SelectItem value="Manhwa">Manhwa</SelectItem>
                                 </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -372,10 +376,9 @@ export default function SearchPage() {
         <div className="space-y-8 pt-4">
           {renderTopCarousel("Top 5 Anime", topAnime, 'Anime')}
           {renderTopCarousel("Top 5 Manga", topManga, 'Manga')}
+          {renderTopCarousel("Top 5 Manhwa", topManhwa, 'Manhwa')}
         </div>
       )}
     </div>
   );
 }
-
-    
