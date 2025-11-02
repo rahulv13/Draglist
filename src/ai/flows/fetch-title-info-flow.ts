@@ -1,15 +1,15 @@
 
 'use server';
 /**
- * @fileOverview A hybrid scraper to extract anime/manga information from a URL.
+ * @fileOverview An AI flow to extract anime/manga information from a URL.
  *
  * - fetchTitleInfo - A function that takes a URL and returns structured data about a title.
  * - FetchTitleInfoInput - The input type for the fetchTitleInfo function.
  * - FetchTitleInfoOutput - The return type for the fetchTitleInfo function.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import * as cheerio from 'cheerio';
 
 const FetchTitleInfoInputSchema = z.object({
   url: z.string().url().describe('The URL of the anime or manga page.'),
@@ -17,80 +17,71 @@ const FetchTitleInfoInputSchema = z.object({
 export type FetchTitleInfoInput = z.infer<typeof FetchTitleInfoInputSchema>;
 
 const FetchTitleInfoOutputSchema = z.object({
-  title: z.string(),
-  imageUrl: z.string().url(),
-  total: z.number(),
-  type: z.enum(['Anime', 'Manga']),
+  title: z.string().describe('The official title of the anime or manga.'),
+  imageUrl: z
+    .string()
+    .url()
+    .describe(
+      "The direct, absolute URL for the cover image. Must be a URL to an image file (e.g., .jpg, .png, .webp), not a URL to a web page."
+    ),
+  total: z
+    .number()
+    .describe(
+      'The total number of episodes or chapters available on the page.'
+    ),
+  type: z.enum(['Anime', 'Manga']).describe("The media type, either 'Anime' or 'Manga'."),
 });
 export type FetchTitleInfoOutput = z.infer<typeof FetchTitleInfoOutputSchema>;
 
 export async function fetchTitleInfo(
   input: FetchTitleInfoInput
 ): Promise<FetchTitleInfoOutput> {
-  try {
-    const response = await fetch(input.url, {
-      headers: {
-        // Use a common user-agent to avoid being blocked
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      },
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch URL: ${response.statusText}`);
-    }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    // --- Try scraping title ---
-    let title =
-      $('meta[property="og:title"]').attr('content') ||
-      $('h1').first().text().trim() ||
-      $('title').first().text().trim() ||
-      'Unknown Title';
-
-    // --- Try scraping cover image ---
-    let imageUrl =
-      $('meta[property="og:image"]').attr('content') ||
-      $('img[src*="cover"], img[src*="poster"]').first().attr('src') ||
-      $('img').first().attr('src') ||
-      '';
-    
-    // Ensure imageUrl is absolute
-    if (imageUrl && !imageUrl.startsWith('http')) {
-        const urlObject = new URL(input.url);
-        imageUrl = `${urlObject.protocol}//${urlObject.hostname}${imageUrl}`;
-    }
-
-
-    // --- Try scraping episodes or chapters ---
-    const textContent = $('body').text();
-
-    const episodeMatches =
-      textContent.match(/(?:Episode|Ep\.|Chapter|Ch\.)\s?(\d+)/gi) || [];
-    const numbers = episodeMatches
-      .map((m) => parseInt(m.replace(/\D/g, ''), 10))
-      .filter((n) => !isNaN(n));
-
-    const total = numbers.length ? Math.max(...numbers) : 1;
-
-    // --- Determine type ---
-    const type =
-      input.url.includes('manga') ||
-      textContent.toLowerCase().includes('chapter')
-        ? 'Manga'
-        : 'Anime';
-
-    // Basic validation
-    if (!imageUrl) {
-        throw new Error('Could not find an image URL.');
-    }
-
-    return { title, imageUrl, total, type };
-  } catch (error: any) {
-    console.error('Error fetching title info:', error);
-    // Re-throw a simpler error to the client
-    throw new Error(`Failed to scrape title info from the provided URL. Reason: ${error.message}`);
-  }
+  return fetchTitleInfoFlow(input);
 }
+
+const prompt = ai.definePrompt({
+  name: 'fetchTitleInfoPrompt',
+  input: { schema: FetchTitleInfoInputSchema },
+  output: { schema: FetchTitleInfoOutputSchema },
+  prompt: `You are an expert web scraper. Your task is to visit the provided URL, render the page as a user would see it (including content loaded by JavaScript), and extract the requested information in the specified JSON format.
+
+URL: {{{url}}}
+
+You must extract the following details:
+1.  **title**: The official title of the series. Find this in the main heading (like <h1>) or the page title.
+2.  **imageUrl**: The direct, absolute URL for the cover image. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
+3.  **total**: The total number of episodes (for Anime) or chapters (for Manga) available.
+    -   **CRITICAL**: You must find the list of episodes or chapters on the page. The total is the number of the LATEST or HIGHEST episode/chapter available. For example, if you see "Chapter 95", "Chapter 94", etc., the total is 95.
+    -   If it is a movie with only one part, return 1.
+    -   If you absolutely cannot find an episode or chapter list, default to 1.
+4.  **type**: Determine if it is 'Anime' or 'Manga'. If the page content mentions "chapters", it is 'Manga'. Otherwise, it is 'Anime'.`,
+});
+
+const fetchTitleInfoFlow = ai.defineFlow(
+  {
+    name: 'fetchTitleInfoFlow',
+    inputSchema: FetchTitleInfoInputSchema,
+    outputSchema: FetchTitleInfoOutputSchema,
+  },
+  async (input) => {
+    try {
+      const { output } = await prompt(input);
+      if (!output) {
+        throw new Error('AI model failed to return structured output.');
+      }
+       // Ensure imageUrl is an absolute URL
+       if (output.imageUrl && !output.imageUrl.startsWith('http')) {
+        const urlObject = new URL(input.url);
+        output.imageUrl = new URL(output.imageUrl, `${urlObject.protocol}//${urlObject.hostname}`).href;
+      }
+
+      return output;
+
+    } catch (error: any) {
+        console.error(`[fetchTitleInfoFlow] Failed to process URL ${input.url}:`, error);
+        throw new Error(`The AI failed to extract information from the URL. Please check if the URL is correct and public. Reason: ${error.message}`);
+    }
+  }
+);
+
+    
