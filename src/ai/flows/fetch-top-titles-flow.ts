@@ -28,7 +28,54 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
 ): Promise<FetchTopTitlesOutput> {
-  // This function is disabled for now to prevent server instability and long load times.
-  // Returning an empty array to ensure the app remains functional.
-  return [];
+  try {
+    const res = await fetch(input.url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118 Safari/537.36',
+      },
+    });
+
+    const html = await res.text();
+    const $ = cheerio.load(html);
+
+    const titles: FetchTopTitlesOutput = [];
+
+    // Scrape logic for anikai.to (Anime)
+    if (input.url.includes('anikai.to')) {
+        $('.film_list-wrap .film-poster').each((_, el) => {
+            const link = $(el).find('a');
+            const title = link.attr('title');
+            const imageUrl = $(el).find('img.film-poster-img').attr('data-src');
+
+            if (title && imageUrl) {
+                const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, input.url).href;
+                if (titles.length < 5) {
+                    titles.push({ title, imageUrl: absoluteUrl });
+                }
+            }
+        });
+    }
+
+    // Scrape logic for asuracomic.net (Manga)
+    if (input.url.includes('asuracomic.net')) {
+        $('.listupd .bs').each((_, el) => {
+             const link = $(el).find('a');
+             const title = link.attr('title');
+             const imageUrl = $(el).find('img').attr('src');
+
+             if (title && imageUrl) {
+                const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, input.url).href;
+                if (titles.length < 5) {
+                    titles.push({ title, imageUrl: absoluteUrl });
+                }
+             }
+        });
+    }
+
+    return titles;
+  } catch (err) {
+    console.error(`Error fetching top titles from ${input.url}:`, err);
+    return [];
+  }
 }
