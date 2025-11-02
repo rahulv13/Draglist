@@ -2,11 +2,10 @@
 'use server';
 /**
  * @fileOverview A flow to fetch top anime/manga titles.
- * It uses the Anilist API for Anime and Manga, and scrapes omegascans.org for Manhwa.
+ * It uses the Anilist API for Anime, Manga, and Manhwa.
  */
 
 import { z } from 'genkit';
-import * as cheerio from 'cheerio';
 
 const FetchTopTitlesInputSchema = z.object({
   type: z.enum(['ANIME', 'MANGA', 'MANHWA']).describe('The type of media to look for.'),
@@ -79,62 +78,17 @@ const fetchFromAnilist = async (type: 'ANIME' | 'MANGA', format?: string): Promi
   return titles;
 };
 
-const fetchFromOmegaScans = async (): Promise<FetchTopTitlesOutput> => {
-    const url = 'https://omegascans.org/';
-    console.log(`[DEBUG] Fetching from OmegaScans: ${url}`);
-    const res = await fetch(url, {
-        headers: {
-            'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118 Safari/537.36',
-        }
-    });
-
-    if (!res.ok) {
-        throw new Error(`Failed to fetch from OmegaScans: ${res.statusText}`);
-    }
-
-    const html = await res.text();
-    const $ = cheerio.load(html);
-    console.log(`[DEBUG] HTML loaded from OmegaScans. Length: ${html.length}`);
-
-    const titles: FetchTopTitlesOutput = [];
-    $('.list-item .list-item-style').each((i, el) => {
-        if (i >= 5) return false; // stop after 5
-
-        const a = $(el).find('a').first();
-        const title = a.attr('title');
-        const img = a.find('img').attr('src');
-        
-        console.log(`[DEBUG] Scraping item ${i}: title='${title}', img='${img}'`);
-
-        if(title && img){
-            titles.push({
-                title,
-                imageUrl: img
-            })
-        }
-    });
-
-    console.log(`[DEBUG] Found ${titles.length} titles from OmegaScans.`);
-    return titles;
-}
-
-
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
 ): Promise<FetchTopTitlesOutput> {
   
   try {
     if (input.type === 'MANHWA') {
-      console.log(`[DEBUG] Fetching top ${input.type} from omegascans.org`);
-      const titles = await fetchFromOmegaScans();
-      console.log(`[DEBUG] Found ${titles.length} ${input.type} titles`);
-      return titles;
+      console.log(`[DEBUG] Fetching top MANHWA from Anilist API`);
+      return await fetchFromAnilist('MANGA', 'MANHWA');
     } else {
       console.log(`[DEBUG] Fetching top ${input.type} from Anilist API`);
-      const titles = await fetchFromAnilist(input.type);
-      console.log(`[DEBUG] Found ${titles.length} ${input.type} titles from Anilist`);
-      return titles;
+      return await fetchFromAnilist(input.type);
     }
   } catch (err) {
     console.error(`Error fetching top titles for ${input.type}:`, err);
