@@ -38,7 +38,7 @@ const prompt = ai.definePrompt({
 
 You must extract the following details for each of the top 5 titles:
 1.  **Title**: The official title of the series.
-2.  **Image URL**: The direct, absolute URL for the cover image.
+2.  **Image URL**: The direct, absolute URL for the cover image. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a URL to a web page.
 
 Visit the URL provided and return the information in the specified JSON array format.
 
