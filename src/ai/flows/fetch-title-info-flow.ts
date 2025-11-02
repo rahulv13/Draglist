@@ -54,7 +54,7 @@ HTML Content:
 
 You must extract the following details:
 1.  **title**: The official title of the series. Find this in the main heading (like <h1>) or the page <title> tag.
-2.  **imageUrl**: The direct, absolute URL for the cover image. Look for a meta tag like <meta property="og:image" ...> or the first prominent <img> tag. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
+2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. Look for the most prominent image, often inside a component that looks like a card or poster. A meta tag like <meta property="og:image" ...> is a good fallback. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
 3.  **total**: The total number of episodes (for Anime) or chapters (for Manga).
     -   **CRITICAL**: You must find the list of episodes or chapters in the HTML. The total is the number of the LATEST or HIGHEST episode/chapter available. For example, if you see "Chapter 95", "Chapter 94", etc., the total is 95.
     -   If it is a movie with only one part, return 1.
