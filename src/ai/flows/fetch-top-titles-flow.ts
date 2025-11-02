@@ -1,15 +1,15 @@
 
 'use server';
 /**
- * @fileOverview An AI flow to extract top anime/manga titles from a homepage URL.
+ * @fileOverview A flow to extract top anime/manga titles from a homepage URL.
  *
  * - fetchTopTitles - A function that takes a URL and returns a list of top titles.
  * - FetchTopTitlesInput - The input type for the fetchTopTitles function.
  * - FetchTopTitlesOutput - The return type for the fetchTopTitles function.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import * as cheerio from 'cheerio';
 
 const FetchTopTitlesInputSchema = z.object({
   url: z.string().url().describe('The URL of the page listing top titles.'),
@@ -25,36 +25,39 @@ const TopTitleSchema = z.object({
 const FetchTopTitlesOutputSchema = z.array(TopTitleSchema).length(5).describe('A list of the top 5 titles found on the page.');
 export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
-const ScraperPromptInputSchema = z.object({
-    url: z.string().url(),
-    type: z.enum(['Anime', 'Manga']),
-    htmlContent: z.string(),
-});
+const siteScrapers: { [key: string]: (html: string, baseUrl: string) => FetchTopTitlesOutput } = {
+  'anikai.to': (html, baseUrl) => {
+    const $ = cheerio.load(html);
+    const titles: { title: string; imageUrl: string }[] = [];
+    $('.swiper-slide-popular').slice(0, 5).each((_, el) => {
+        const title = $(el).find('.film-title a').text().trim();
+        let imageUrl = $(el).find('.film-poster-img').attr('data-src') || '';
+        if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = new URL(imageUrl, baseUrl).href;
+        }
+        if (title && imageUrl) {
+            titles.push({ title, imageUrl });
+        }
+    });
+    return titles as FetchTopTitlesOutput;
+  },
+  'asuracomic.net': (html, baseUrl) => {
+    const $ = cheerio.load(html);
+    const titles: { title: string; imageUrl: string }[] = [];
+    $('div.bsx').slice(0, 5).each((_, el) => {
+      const title = $(el).find('a').attr('title');
+      let imageUrl = $(el).find('img').attr('src') || '';
+       if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = new URL(imageUrl, baseUrl).href;
+        }
+      if (title && imageUrl) {
+        titles.push({ title, imageUrl });
+      }
+    });
+    return titles as FetchTopTitlesOutput;
+  }
+};
 
-const prompt = ai.definePrompt({
-  name: 'fetchTopTitlesPrompt',
-  input: { schema: ScraperPromptInputSchema },
-  output: { schema: FetchTopTitlesOutputSchema },
-  prompt: `You are a web scraping expert specializing in anime and manga websites. Your task is to analyze the provided HTML content and identify the top 5 titles based on the media type.
-
-You must extract the following details for each of the top 5 titles:
-1.  **title**: The full, official title of the series.
-2.  **imageUrl**: The direct, absolute URL for the cover image. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a URL to another web page.
-
-Analyze the HTML content and return the information in the specified JSON array format.
-
-- If the type is **Manga**, find the section for "Popular" titles and get the data from the **"All"** or **"All-Time"** tab within that section.
-- If the type is **Anime**, find the section for top/trending/popular titles.
-
-URL: {{{url}}}
-Type: {{{type}}}
-
-HTML Content:
-\`\`\`html
-{{{htmlContent}}}
-\`\`\`
-`,
-});
 
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
@@ -71,23 +74,23 @@ export async function fetchTopTitles(
     }
 
     const htmlContent = await response.text();
+    const url = new URL(input.url);
+    const domain = url.hostname.replace('www.', '');
 
-    const { output } = await prompt({
-      ...input,
-      htmlContent: htmlContent,
-    });
-    
-    if (!output) {
-      throw new Error('AI model failed to return structured output from the HTML content.');
+    const scraper = siteScrapers[domain];
+
+    if (!scraper) {
+        throw new Error(`No scraper available for domain: ${domain}`);
     }
+
+    const results = scraper(htmlContent, input.url);
     
     // Ensure all imageUrls are absolute
-    const urlObject = new URL(input.url);
-    const absoluteOutput = output.map(item => {
+    const absoluteOutput = results.map(item => {
       if (item.imageUrl && !item.imageUrl.startsWith('http')) {
         return {
           ...item,
-          imageUrl: new URL(item.imageUrl, `${urlObject.protocol}//${urlObject.hostname}`).href
+          imageUrl: new URL(item.imageUrl, `${url.protocol}//${url.hostname}`).href
         };
       }
       return item;
@@ -96,6 +99,7 @@ export async function fetchTopTitles(
     return absoluteOutput;
   } catch (error: any) {
     console.error(`[fetchTopTitles] Failed to process URL ${input.url}:`, error);
-    throw new Error(`The AI failed to extract top titles from the URL. Reason: ${error.message}`);
+    // Return an empty array on failure so the UI doesn't break
+    return [];
   }
 }
