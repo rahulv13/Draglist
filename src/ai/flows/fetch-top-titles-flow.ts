@@ -1,14 +1,13 @@
+
 'use server';
 /**
- * @fileOverview A flow to extract top anime/manga titles from Anikai homepage.
+ * @fileOverview A flow to fetch top anime/manga titles from the Anilist API.
  */
 
 import { z } from 'genkit';
-import * as cheerio from 'cheerio';
 
 const FetchTopTitlesInputSchema = z.object({
-  url: z.string().url().describe('The URL of the page listing top titles.'),
-  type: z.enum(['Anime', 'Manga']).describe('The type of media to look for.'),
+  type: z.enum(['ANIME', 'MANGA']).describe('The type of media to look for.'),
 });
 export type FetchTopTitlesInput = z.infer<typeof FetchTopTitlesInputSchema>;
 
@@ -23,67 +22,64 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
 ): Promise<FetchTopTitlesOutput> {
-  console.log(`[DEBUG] Fetching top ${input.type} from ${input.url}`);
+  console.log(`[DEBUG] Fetching top ${input.type} from Anilist API`);
+
+  const query = `
+    query ($type: MediaType, $sort: [MediaSort]) {
+      Page(page: 1, perPage: 5) {
+        media(type: $type, sort: $sort) {
+          title {
+            romaji
+            english
+          }
+          coverImage {
+            large
+          }
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    type: input.type,
+    sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
+  };
 
   try {
-    // Use Jina proxy to render JS content
-    const proxyUrl = `https://r.jina.ai/${input.url}`;
-    const res = await fetch(proxyUrl, {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118 Safari/537.36',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
+      body: JSON.stringify({
+        query: query,
+        variables: variables,
+      }),
     });
 
-    if (!res.ok) throw new Error(`Failed to fetch from proxy: ${res.statusText}`);
-
-    const html = await res.text();
-
-    // Parse text with cheerio
-    const $ = cheerio.load(html);
-
-    const titles: FetchTopTitlesOutput = [];
-
-    // This logic is specific to anikai.to's structure
-    if (input.url.includes('anikai.to')) {
-        $('img').each((i, el) => {
-            if (titles.length >= 5) return false; 
-    
-            const imageUrl = $(el).attr('src');
-            const altText = $(el).attr('alt') || '';
-    
-            if (imageUrl && altText && altText.trim() !== "") {
-                titles.push({
-                title: altText.trim(),
-                imageUrl: imageUrl.startsWith('http')
-                    ? imageUrl
-                    : new URL(imageUrl, 'https://anikai.to').href,
-                });
-            }
-        });
-    }
-    // This logic is specific to asuracomic.net's structure
-    else if (input.url.includes('asuracomic.net')) {
-        $('.listupd .bsx a').each((i, el) => {
-            if (titles.length >= 5) return false;
-
-            const title = $(el).attr('title');
-            const imageUrl = $(el).find('img').attr('src');
-
-            if (title && imageUrl) {
-                 titles.push({
-                    title: title.trim(),
-                    imageUrl: imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, 'https://asuracomic.net').href,
-                });
-            }
-        });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch from Anilist API: ${res.statusText}`);
     }
 
-    console.log(`[DEBUG] Found ${titles.length} ${input.type} titles from ${input.url}`);
+    const json = await res.json();
+    
+    if (json.errors) {
+      console.error('Anilist API returned errors:', json.errors);
+      throw new Error('Anilist API returned errors.');
+    }
 
-    return titles.slice(0, 5);
+    const titles = json.data.Page.media.map((media: any) => ({
+      title: media.title.english || media.title.romaji,
+      imageUrl: media.coverImage.large,
+    }));
+    
+    console.log(`[DEBUG] Found ${titles.length} ${input.type} titles from Anilist`);
+
+    return titles;
+
   } catch (err) {
-    console.error(`Error fetching top titles from ${input.url}:`, err);
+    console.error(`Error fetching top titles from Anilist:`, err);
     return [];
   }
 }

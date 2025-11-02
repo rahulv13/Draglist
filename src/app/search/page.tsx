@@ -97,8 +97,8 @@ export default function SearchPage() {
       setIsLoadingTop(true);
       try {
         const [animeRes, mangaRes] = await Promise.all([
-          fetchTopTitles({ url: 'https://anikai.to/home', type: 'Anime' }),
-          fetchTopTitles({ url: 'https://asuracomic.net/', type: 'Manga' }),
+          fetchTopTitles({ type: 'ANIME' }),
+          fetchTopTitles({ type: 'MANGA' }),
         ]);
         setTopAnime(animeRes);
         setTopManga(mangaRes);
@@ -107,7 +107,7 @@ export default function SearchPage() {
         toast({
             variant: "destructive",
             title: "Error fetching popular titles",
-            description: "Could not fetch top anime and manga lists. This may be due to API rate limits.",
+            description: "Could not fetch top anime and manga lists from Anilist.",
         })
       } finally {
         setIsLoadingTop(false);
