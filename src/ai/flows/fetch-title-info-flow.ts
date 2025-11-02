@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to extract anime/manga information from a URL.
@@ -25,7 +26,7 @@ const FetchTitleInfoOutputSchema = z.object({
     .describe("The direct URL to the title's cover image."),
   total: z
     .number()
-    .describe('The total number of episodes (for anime) or chapters (for manga). If it is ongoing or unknown, return 1.'),
+    .describe('The total number of episodes (for anime) or chapters (for manga). If it is ongoing or unknown, return the latest available chapter/episode number.'),
   type: z
     .enum(['Anime', 'Manga'])
     .describe('The type of media.'),
@@ -47,11 +48,12 @@ const prompt = ai.definePrompt({
 You must extract the following details:
 1.  **Title**: The official title of the series.
 2.  **Image URL**: The direct, absolute URL for the cover image.
-3.  **Total**: The total number of episodes or chapters.
-    - If the title is a manga, you MUST find the chapter list on the page and use the number of the **latest** available chapter as the total.
+3.  **Total**: The total number of episodes (for anime) or chapters (for manga).
+    - If the title is a manga, you MUST find the chapter list on the page and use the number of the **latest** available chapter as the total. Search for numbers directly adjacent to words like "Chapter", "Ch.", or "Ep.".
     - If the page lists multiple anime seasons, **extract the episode count for the FIRST season only**.
     - If the title is a movie, return 1.
-    - If, after checking all other conditions, the series is still airing or the total count is not clearly stated, you must return 1.
+    - Ignore numbers found in titles, release years, or update timestamps.
+    - If, after checking all other conditions, the series is still airing or the total count is not clearly stated, you must return the highest episode or chapter number you can find, or return 1 if no number is found.
 4.  **Type**: Determine if it is an "Anime" or a "Manga".
 
 Visit the URL provided and return the information in the specified JSON format.
