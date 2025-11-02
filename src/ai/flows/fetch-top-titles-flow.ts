@@ -94,6 +94,7 @@ export async function fetchTopTitles(
     return absoluteOutput;
   } catch (error: any) {
     console.error(`[fetchTopTitles] Failed to process URL ${input.url}:`, error);
-    throw new Error(`The scraper failed to extract top titles from the URL. Reason: ${error.message}`);
+    // Return an empty array on failure to prevent the page from crashing.
+    return [];
   }
 }
