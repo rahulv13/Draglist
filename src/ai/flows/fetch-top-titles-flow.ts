@@ -27,7 +27,7 @@ const fetchFromAnilist = async (
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
     query ($type: MediaType, $sort: [MediaSort], $country: CountryCode) {
-      Page(page: 1, perPage: 10) {
+      Page(page: 1, perPage: 5) {
         media(
           type: $type,
           sort: $sort,
