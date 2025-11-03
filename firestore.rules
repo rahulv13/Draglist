@@ -50,8 +50,8 @@ service cloud.firestore {
        */
       match /titles/{titleId} {
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidTitle(request.resource.data);
-        allow update: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTitleCreate(request.resource.data);
+        allow update: if isOwner(userId) && isValidTitleUpdate(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }
@@ -89,7 +89,7 @@ service cloud.firestore {
      * @param {map} data The incoming resource data.
      * @return {bool} True if the data is valid, false otherwise.
      */
-    function isValidTitle(data) {
+    function isValidTitleCreate(data) {
       return data.title is string &&
              data.type is string && data.type in ['Anime', 'Manga', 'Manhwa'] &&
              data.status is string && data.status in ['Watching', 'Reading', 'Planned', 'Completed'] &&
@@ -98,6 +98,33 @@ service cloud.firestore {
              data.score is number && data.score >= 0 && data.score <= 10 &&
              data.imageUrl is string &&
              data.createdAt is timestamp;
+    }
+
+    /**
+     * @description Validates the fields of a 'Title' document on update.
+     * Ensures that immutable fields are not changed.
+     * @param {map} data The incoming resource data from the request.
+     * @return {bool} True if the update is valid, false otherwise.
+     */
+    function isValidTitleUpdate(data) {
+      // Get the existing document's data for comparison
+      let existingData = resource.data;
+
+      // Fields that can be updated
+      let canUpdateStatus = data.keys().hasAny(['status']) && data.status is string && data.status in ['Watching', 'Reading', 'Planned', 'Completed'];
+      let canUpdateProgress = data.keys().hasAny(['progress']) && data.progress is number && data.progress >= 0;
+      let canUpdateScore = data.keys().hasAny(['score']) && data.score is number && data.score >= 0 && data.score <= 10;
+      let canUpdateTotal = data.keys().hasAny(['total']) && data.total is number;
+      let canUpdateTimestamp = data.keys().hasAny(['updatedAt']) && data.updatedAt is timestamp;
+      
+      // Ensure only allowed fields are being updated
+      let allowedUpdateKeys = ['status', 'progress', 'score', 'total', 'updatedAt', 'title', 'type', 'imageUrl'];
+      let areKeysValid = data.keys().hasOnly(allowedUpdateKeys);
+
+      // Check immutable fields: createdAt should not change
+      let areImmutableFieldsUnchanged = !data.keys().hasAny(['createdAt']);
+      
+      return areKeysValid && areImmutableFieldsUnchanged;
     }
   }
 }
