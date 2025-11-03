@@ -29,7 +29,7 @@ const FetchTitleInfoOutputSchema = z.object({
     .describe(
       'The total number of episodes or chapters available on the page.'
     ),
-  type: z.enum(['Anime', 'Manga']).describe("The media type, either 'Anime' or 'Manga'."),
+  type: z.enum(['Anime', 'Manga', 'Manhwa']).describe("The media type, one of 'Anime', 'Manga', or 'Manhwa'."),
 });
 export type FetchTitleInfoOutput = z.infer<typeof FetchTitleInfoOutputSchema>;
 
@@ -55,11 +55,14 @@ HTML Content:
 You must extract the following details:
 1.  **title**: The official title of the series. Find this in the main heading (like <h1>) or the page <title> tag.
 2.  **imageUrl**: The direct, absolute URL for the main cover image or poster. Look for the most prominent image, often inside a component that looks like a card or poster. A meta tag like <meta property="og:image" ...> is a good fallback. This must be a URL to an image file (e.g., .jpg, .png, .webp), not a link to another web page.
-3.  **total**: The total number of episodes (for Anime) or chapters (for Manga).
+3.  **total**: The total number of episodes (for Anime) or chapters (for Manga/Manhwa).
     -   **CRITICAL**: You must find the list of episodes or chapters in the HTML. The total is the number of the LATEST or HIGHEST episode/chapter available. For example, if you see "Chapter 95", "Chapter 94", etc., the total is 95.
     -   If it is a movie with only one part, return 1.
     -   If you absolutely cannot find an episode or chapter list in the HTML, default to 1.
-4.  **type**: Determine if it is 'Anime' or 'Manga'. If the content or URL mentions "chapters" or "manga", it is 'Manga'. Otherwise, it is 'Anime'.`,
+4.  **type**: Determine if it is 'Anime', 'Manga', or 'Manhwa'.
+    - If the content mentions "episodes" or "anime", it is 'Anime'.
+    - If the content or URL mentions "manhwa" or "webtoon", or if the site is a known manhwa-focused site (like asurascans, omegascans), it is 'Manhwa'.
+    - Otherwise, if it has "chapters", assume it is 'Manga'.`,
 });
 
 
