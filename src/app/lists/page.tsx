@@ -140,7 +140,7 @@ export default function ListsPage() {
         <TabsContent value="reading" className="space-y-4">
           <ListTabContent
             titles={paginatedData.reading.items}
-            emptyMessage="You're not reading any manga."
+            emptyMessage="You're not reading any manga or manhwa."
             page={currentPages.reading}
             totalPages={paginatedData.reading.totalPages}
             onPageChange={(page) => handlePageChange('reading', page)}
