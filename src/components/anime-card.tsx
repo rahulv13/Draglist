@@ -87,18 +87,17 @@ export function AnimeCard({ item }: AnimeCardProps) {
   const handleProgressChange = (increment: number) => {
     if (!user) return;
     
-    // For titles with unknown total, allow incrementing without a cap
+    const isManga = item.type === 'Manga' || item.type === 'Manhwa';
     const maxProgress = item.total > 0 ? item.total : Infinity;
     const newProgress = Math.max(0, Math.min(item.progress + increment, maxProgress));
     const updatedFields: Partial<Title> = { progress: newProgress };
   
-    // Determine the new status based on the progress
     if (item.total > 0 && newProgress >= item.total) {
       updatedFields.status = 'Completed';
     } else if (newProgress > 0) {
-      if (item.status === 'Planned' || item.status === 'Completed') {
-        updatedFields.status = item.type === 'Anime' ? 'Watching' : 'Reading';
-      }
+        if (item.status === 'Planned') {
+            updatedFields.status = isManga ? 'Reading' : 'Watching';
+        }
     } else { // newProgress is 0
       if (item.status !== 'Planned') {
           updatedFields.status = 'Planned';
