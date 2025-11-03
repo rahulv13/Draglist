@@ -23,15 +23,15 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
 const fetchFromAnilist = async (
   type: 'ANIME' | 'MANGA',
-  format?: 'MANGA' | 'MANHWA'
+  format?: 'MANGA' | 'WEB_MANGA'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
-    query ($type: MediaType, $sort: [MediaSort], $country: CountryCode) {
+    query ($type: MediaType, $sort: [MediaSort], $format_in: [MediaFormat]) {
       Page(page: 1, perPage: 5) {
         media(
           type: $type,
           sort: $sort,
-          countryOfOrigin: $country,
+          format_in: $format_in,
           status_not_in: [NOT_YET_RELEASED]
         ) {
           title {
@@ -43,10 +43,11 @@ const fetchFromAnilist = async (
           }
           episodes
           chapters
+          volumes
           nextAiringEpisode {
             episode
           }
-          countryOfOrigin
+          format
         }
       }
     }
@@ -57,12 +58,7 @@ const fetchFromAnilist = async (
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
 
-  // handle country filter (important part)
-  if (format === 'MANHWA') {
-    variables.country = 'KR'; // Korea → Manhwa
-  } else if (format === 'MANGA') {
-    variables.country = 'JP'; // Japan → Manga
-  }
+  if (format) variables.format_in = [format];
 
 
   const res = await fetch('https://graphql.anilist.co', {
@@ -80,23 +76,24 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.episodes || m.chapters;
-    // If episodes/chapters is null (ongoing anime), try to get the next airing episode
-    if (total === null && m.nextAiringEpisode) {
+    let total = m.episodes || m.chapters || m.volumes;
+
+    // Try to infer total for ongoing titles
+    if (!total && m.nextAiringEpisode?.episode) {
       total = m.nextAiringEpisode.episode - 1;
     }
-
+    
     const detectedType =
       type === 'ANIME'
         ? 'Anime'
-        : m.countryOfOrigin === 'KR'
+        : format === 'WEB_MANGA'
         ? 'Manhwa'
         : 'Manga';
-    
+
     return {
       title: m.title.english || m.title.romaji,
       imageUrl: m.coverImage.large,
-      total: total > 0 ? total : 0, // Default to 0 if null or less
+      total: total ?? 0,
       type: detectedType,
     };
   });
@@ -112,7 +109,7 @@ export async function fetchTopTitles(
       case 'MANGA':
         return await fetchFromAnilist('MANGA', 'MANGA');
       case 'MANHWA':
-        return await fetchFromAnilist('MANGA', 'MANHWA');
+        return await fetchFromAnilist('MANGA', 'WEB_MANGA');
       default:
         return [];
     }
