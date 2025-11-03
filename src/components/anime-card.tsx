@@ -86,12 +86,14 @@ export function AnimeCard({ item }: AnimeCardProps) {
 
   const handleProgressChange = (increment: number) => {
     if (!user) return;
-  
-    const newProgress = Math.max(0, Math.min(item.progress + increment, item.total));
+    
+    // For titles with unknown total, allow incrementing without a cap
+    const maxProgress = item.total > 0 ? item.total : Infinity;
+    const newProgress = Math.max(0, Math.min(item.progress + increment, maxProgress));
     const updatedFields: Partial<Title> = { progress: newProgress };
   
     // Determine the new status based on the progress
-    if (newProgress >= item.total) {
+    if (item.total > 0 && newProgress >= item.total) {
       updatedFields.status = 'Completed';
     } else if (newProgress > 0) {
       if (item.status === 'Planned' || item.status === 'Completed') {
@@ -125,6 +127,8 @@ export function AnimeCard({ item }: AnimeCardProps) {
       variant: 'destructive',
     });
   };
+
+  const totalDisplay = item.total > 0 ? item.total : (item.type === 'Anime' ? 'Ongoing' : 'TBD');
 
   return (
     <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
@@ -259,7 +263,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
                     name="total"
                     rules={{
                       required: 'Total is required',
-                      min: { value: 1, message: 'Must be at least 1' },
+                      min: { value: 0, message: 'Must be at least 0' },
                     }}
                     render={({ field }) => (
                       <FormItem>
@@ -310,9 +314,9 @@ export function AnimeCard({ item }: AnimeCardProps) {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} /{' '}
-            {item.total}
+            {totalDisplay}
           </span>
-          <span>{percentage.toFixed(0)}%</span>
+          <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>
         <Progress value={percentage} className="h-2" />
       </CardContent>
@@ -335,7 +339,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
             size="icon"
             className="h-8 w-8"
             onClick={() => handleProgressChange(1)}
-            disabled={item.progress >= item.total}
+            disabled={item.total > 0 && item.progress >= item.total}
           >
             <Plus className="h-4 w-4" />
           </Button>

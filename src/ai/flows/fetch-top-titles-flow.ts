@@ -41,6 +41,9 @@ const fetchFromAnilist = async (
           }
           episodes
           chapters
+          nextAiringEpisode {
+            episode
+          }
         }
       }
     }
@@ -67,11 +70,22 @@ const fetchFromAnilist = async (
   const json = await res.json();
   const data = json.data?.Page?.media ?? [];
 
-  return data.map((m: any) => ({
-    title: m.title.english || m.title.romaji,
-    imageUrl: m.coverImage.large,
-    total: m.episodes || m.chapters || 1,
-  }));
+  return data.map((m: any) => {
+    let total = m.episodes || m.chapters;
+    // If total is still null (e.g. for an ongoing anime), check nextAiringEpisode
+    if (total === null && m.nextAiringEpisode) {
+      // Anilist's `nextAiringEpisode.episode` is the number of the *next* episode, 
+      // so the current total is one less. This is a good estimate for ongoing shows.
+      total = m.nextAiringEpisode.episode - 1;
+    }
+
+    return {
+        title: m.title.english || m.title.romaji,
+        imageUrl: m.coverImage.large,
+        // If total is still null or 0, default to 0 to indicate "unknown" or "ongoing"
+        total: total > 0 ? total : 0, 
+    }
+  });
 };
 
 export async function fetchTopTitles(
