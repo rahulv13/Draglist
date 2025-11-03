@@ -49,7 +49,8 @@ export default function ListsPage() {
   const { user } = useUser();
   const [currentPages, setCurrentPages] = useState({
     watching: 1,
-    reading: 1,
+    readingManga: 1,
+    readingManhwa: 1,
     plannedAnime: 1,
     plannedManga: 1,
     plannedManhwa: 1,
@@ -71,6 +72,14 @@ export default function ListsPage() {
     () => allTitles?.filter((t) => t.status === 'Reading') || [],
     [allTitles]
   );
+  const readingManga = useMemo(
+    () => reading.filter((t) => t.type === 'Manga') || [],
+    [reading]
+  );
+  const readingManhwa = useMemo(
+    () => reading.filter((t) => t.type === 'Manhwa') || [],
+    [reading]
+  );
   const planned = useMemo(
     () => allTitles?.filter((t) => t.status === 'Planned') || [],
     [allTitles]
@@ -79,11 +88,11 @@ export default function ListsPage() {
     () => planned.filter((t) => t.type === 'Anime') || [],
     [planned]
   );
-    const plannedManga = useMemo(
+  const plannedManga = useMemo(
     () => planned.filter((t) => t.type === 'Manga') || [],
     [planned]
   );
-    const plannedManhwa = useMemo(
+  const plannedManhwa = useMemo(
     () => planned.filter((t) => t.type === 'Manhwa') || [],
     [planned]
   );
@@ -107,28 +116,29 @@ export default function ListsPage() {
     };
     return {
       watching: paginate(watching, currentPages.watching),
-      reading: paginate(reading, currentPages.reading),
+      readingManga: paginate(readingManga, currentPages.readingManga),
+      readingManhwa: paginate(readingManhwa, currentPages.readingManhwa),
       plannedAnime: paginate(plannedAnime, currentPages.plannedAnime),
       plannedManga: paginate(plannedManga, currentPages.plannedManga),
       plannedManhwa: paginate(plannedManhwa, currentPages.plannedManhwa),
       completed: paginate(completed, currentPages.completed),
     };
-  }, [watching, reading, plannedAnime, plannedManga, plannedManhwa, completed, currentPages]);
+  }, [watching, readingManga, readingManhwa, plannedAnime, plannedManga, plannedManhwa, completed, currentPages]);
   
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">My Lists</h2>
       </div>
-      <Tabs defaultValue="watching" className="space-y-4">
+      <Tabs defaultValue="anime" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="watching">Watching</TabsTrigger>
+          <TabsTrigger value="anime">Anime</TabsTrigger>
           <TabsTrigger value="reading">Reading</TabsTrigger>
           <TabsTrigger value="planned">Planned</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="watching" className="space-y-4">
+        <TabsContent value="anime" className="space-y-4">
           <ListTabContent
             titles={paginatedData.watching.items}
             emptyMessage="You're not watching any anime."
@@ -138,13 +148,30 @@ export default function ListsPage() {
           />
         </TabsContent>
         <TabsContent value="reading" className="space-y-4">
-          <ListTabContent
-            titles={paginatedData.reading.items}
-            emptyMessage="You're not reading any manga or manhwa."
-            page={currentPages.reading}
-            totalPages={paginatedData.reading.totalPages}
-            onPageChange={(page) => handlePageChange('reading', page)}
-          />
+           <Tabs defaultValue="manga" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="manga">Manga</TabsTrigger>
+                    <TabsTrigger value="manhwa">Manhwa</TabsTrigger>
+                </TabsList>
+                <TabsContent value="manga" className="space-y-4">
+                    <ListTabContent
+                        titles={paginatedData.readingManga.items}
+                        emptyMessage="You are not reading any manga."
+                        page={currentPages.readingManga}
+                        totalPages={paginatedData.readingManga.totalPages}
+                        onPageChange={(page) => handlePageChange('readingManga', page)}
+                    />
+                </TabsContent>
+                <TabsContent value="manhwa" className="space-y-4">
+                    <ListTabContent
+                        titles={paginatedData.readingManhwa.items}
+                        emptyMessage="You are not reading any manhwa."
+                        page={currentPages.readingManhwa}
+                        totalPages={paginatedData.readingManhwa.totalPages}
+                        onPageChange={(page) => handlePageChange('readingManhwa', page)}
+                    />
+                </TabsContent>
+            </Tabs>
         </TabsContent>
         <TabsContent value="planned" className="space-y-4">
             <Tabs defaultValue="anime" className="space-y-4">
