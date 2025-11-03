@@ -1,36 +1,36 @@
-
 'use server';
 /**
- * @fileOverview A flow to fetch top anime/manga/manhwa titles.
- * Uses the Anilist GraphQL API for clean and consistent results.
+ * @fileOverview Fetches top anime, manga, and manhwa titles from AniList API.
  */
 
 import { z } from 'genkit';
 
 const FetchTopTitlesInputSchema = z.object({
-  type: z.enum(['ANIME', 'MANGA', 'MANHWA']).describe('The type of media to fetch.'),
+  type: z.enum(['ANIME', 'MANGA', 'MANHWA']).describe('The type of media to look for.'),
 });
 export type FetchTopTitlesInput = z.infer<typeof FetchTopTitlesInputSchema>;
 
 const TopTitleSchema = z.object({
-  title: z.string().describe('The full title of the anime, manga, or manhwa.'),
+  title: z.string().describe('The full title of the anime or manga.'),
   imageUrl: z.string().url().describe("The direct, absolute URL to the title's cover image."),
 });
 
 const FetchTopTitlesOutputSchema = z.array(TopTitleSchema);
 export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
-/**
- * Fetch data from the Anilist GraphQL API.
- */
 const fetchFromAnilist = async (
   type: 'ANIME' | 'MANGA',
-  format?: string
+  countryOfOrigin?: 'JP' | 'KR' | 'CN'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
-    query ($type: MediaType, $sort: [MediaSort], $format: MediaFormat) {
+    query ($type: MediaType, $sort: [MediaSort], $countryOfOrigin: CountryCode) {
       Page(page: 1, perPage: 5) {
-        media(type: $type, sort: $sort, format: $format, status_not_in: [NOT_YET_RELEASED]) {
+        media(
+          type: $type,
+          sort: $sort,
+          countryOfOrigin: $countryOfOrigin,
+          status_not_in: [NOT_YET_RELEASED]
+        ) {
           title {
             romaji
             english
@@ -48,7 +48,7 @@ const fetchFromAnilist = async (
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
 
-  if (format) variables.format = format;
+  if (countryOfOrigin) variables.countryOfOrigin = countryOfOrigin;
 
   const res = await fetch('https://graphql.anilist.co', {
     method: 'POST',
@@ -59,44 +59,34 @@ const fetchFromAnilist = async (
     body: JSON.stringify({ query, variables }),
   });
 
-  if (!res.ok) {
-    throw new Error(`Anilist API request failed: ${res.statusText}`);
-  }
+  if (!res.ok) throw new Error(`Anilist fetch failed: ${res.statusText}`);
 
   const json = await res.json();
+  const data = json.data?.Page?.media ?? [];
 
-  if (json.errors) {
-    console.error('Anilist API returned errors:', json.errors);
-    throw new Error('Anilist API returned errors.');
-  }
-
-  return json.data.Page.media.map((media: any) => ({
-    title: media.title.english || media.title.romaji,
-    imageUrl: media.coverImage.large,
+  return data.map((m: any) => ({
+    title: m.title.english || m.title.romaji,
+    imageUrl: m.coverImage.large,
   }));
 };
 
-/**
- * Main entry point: fetch top titles for ANIME, MANGA, or MANHWA.
- */
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
 ): Promise<FetchTopTitlesOutput> {
   try {
     switch (input.type) {
-      case 'MANHWA':
-        console.log('[DEBUG] Fetching top MANHWA titles from Anilist...');
-        return await fetchFromAnilist('MANGA', 'MANHWA');
-      case 'MANGA':
-        console.log('[DEBUG] Fetching top MANGA titles from Anilist...');
-        return await fetchFromAnilist('MANGA');
       case 'ANIME':
+        return await fetchFromAnilist('ANIME', 'JP');
+      case 'MANGA':
+        return await fetchFromAnilist('MANGA', 'JP');
+      case 'MANHWA':
+        // ✅ Fetch Korean-origin manga (Manhwa)
+        return await fetchFromAnilist('MANGA', 'KR');
       default:
-        console.log('[DEBUG] Fetching top ANIME titles from Anilist...');
-        return await fetchFromAnilist('ANIME');
+        return [];
     }
   } catch (err) {
-    console.error(`Error fetching ${input.type} titles:`, err);
+    console.error(`Error fetching top ${input.type}:`, err);
     return [];
   }
 }
