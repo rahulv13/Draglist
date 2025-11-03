@@ -49,8 +49,10 @@ service cloud.firestore {
        * @principle Enforces that only the owner of the parent user document can manage titles.
        */
       match /titles/{titleId} {
-        allow read, create, delete: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTitle(request.resource.data);
         allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
       }
     }
 
@@ -80,6 +82,22 @@ service cloud.firestore {
      */
     function isExistingOwner(userId) {
       return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    /**
+     * @description Validates the fields of a 'Title' document on creation.
+     * @param {map} data The incoming resource data.
+     * @return {bool} True if the data is valid, false otherwise.
+     */
+    function isValidTitle(data) {
+      return data.title is string &&
+             data.type is string && data.type in ['Anime', 'Manga', 'Manhwa'] &&
+             data.status is string && data.status in ['Watching', 'Reading', 'Planned', 'Completed'] &&
+             data.progress is number &&
+             data.total is number &&
+             data.score is number && data.score >= 0 && data.score <= 10 &&
+             data.imageUrl is string &&
+             data.createdAt is timestamp;
     }
   }
 }
