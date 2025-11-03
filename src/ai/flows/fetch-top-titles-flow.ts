@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview Fetches top anime, manga, and manhwa titles.
- * Uses Anilist API for Anime and MangaDex API for Manga/Manhwa.
+ * Uses Anilist API for Anime and Manga/Manhwa.
  */
 
 import { z } from 'genkit';
@@ -73,55 +73,16 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.chapters || m.episodes; 
+    let total = m.chapters || m.episodes;
     if (total === null && m.nextAiringEpisode) {
       total = m.nextAiringEpisode.episode - 1;
     }
     return {
-        title: m.title.english || m.title.romaji,
-        imageUrl: m.coverImage.large,
-        total: total > 0 ? total : 0, 
-    }
+      title: m.title.english || m.title.romaji,
+      imageUrl: m.coverImage.large,
+      total: total > 0 ? total : 0,
+    };
   });
-};
-
-const fetchFromMangaDex = async (
-    contentRating: 'safe' | 'suggestive' = 'safe'
-  ): Promise<FetchTopTitlesOutput> => {
-    try {
-      const url = new URL('https://api.mangadex.org/manga');
-      url.searchParams.set('limit', '5');
-      url.searchParams.set('order[followedCount]', 'desc');
-      url.searchParams.append('contentRating[]', contentRating);
-      url.searchParams.append('includes[]', 'cover_art');
-  
-      const res = await fetch(url.toString());
-      if (!res.ok) {
-        throw new Error(`MangaDex API request failed: ${res.statusText}`);
-      }
-  
-      const json = await res.json();
-      const mangaList = json.data || [];
-  
-      return mangaList.map((manga: any) => {
-        const coverArt = manga.relationships.find((r: any) => r.type === 'cover_art');
-        const fileName = coverArt?.attributes?.fileName;
-        const imageUrl = fileName
-          ? `https://uploads.mangadex.org/covers/${manga.id}/${fileName}`
-          : 'https://placehold.co/400x600/27272a/71717a?text=No+Cover';
-        
-        const lastChapter = manga.attributes.lastChapter ? parseFloat(manga.attributes.lastChapter) : 0;
-        
-        return {
-          title: manga.attributes.title.en || manga.attributes.title[Object.keys(manga.attributes.title)[0]],
-          imageUrl: imageUrl,
-          total: !isNaN(lastChapter) ? lastChapter : 0,
-        };
-      });
-    } catch (error) {
-      console.error('Failed to fetch from MangaDex:', error);
-      return [];
-    }
 };
 
 export async function fetchTopTitles(
@@ -132,11 +93,9 @@ export async function fetchTopTitles(
       case 'ANIME':
         return await fetchFromAnilist('ANIME', 'JP');
       case 'MANGA':
-        // Using MangaDex for better chapter data
-        return await fetchFromMangaDex();
+        return await fetchFromAnilist('MANGA', 'JP');
       case 'MANHWA':
-        // MangaDex is also great for Manhwa (often tagged as manga)
-        return await fetchFromMangaDex();
+        return await fetchFromAnilist('MANGA', 'KR');
       default:
         return [];
     }
