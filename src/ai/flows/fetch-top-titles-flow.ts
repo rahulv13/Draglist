@@ -13,6 +13,7 @@ export type FetchTopTitlesInput = z.infer<typeof FetchTopTitlesInputSchema>;
 const TopTitleSchema = z.object({
   title: z.string().describe('The full title of the anime or manga.'),
   imageUrl: z.string().url().describe("The direct, absolute URL to the title's cover image."),
+  total: z.number().nullable().describe('Total number of episodes or chapters.'),
 });
 
 const FetchTopTitlesOutputSchema = z.array(TopTitleSchema);
@@ -38,6 +39,8 @@ const fetchFromAnilist = async (
           coverImage {
             large
           }
+          episodes
+          chapters
         }
       }
     }
@@ -67,6 +70,7 @@ const fetchFromAnilist = async (
   return data.map((m: any) => ({
     title: m.title.english || m.title.romaji,
     imageUrl: m.coverImage.large,
+    total: m.episodes || m.chapters || 1,
   }));
 };
 

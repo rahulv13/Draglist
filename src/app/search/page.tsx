@@ -193,7 +193,7 @@ export default function SearchPage() {
                       type: type,
                       status: 'Planned',
                       progress: 0,
-                      total: 1, // Avoid division by zero
+                      total: item.total || 1,
                       score: 0,
                       imageHint: '',
                       createdAt: new Date(),
