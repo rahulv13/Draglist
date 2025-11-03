@@ -23,15 +23,15 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
 const fetchFromAnilist = async (
   type: 'ANIME' | 'MANGA',
-  format?: 'MANGA' | 'WEB_MANGA'
+  filter?: 'MANGA' | 'MANHWA'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
-    query ($type: MediaType, $sort: [MediaSort], $format_in: [MediaFormat]) {
-      Page(page: 1, perPage: 5) {
+    query ($type: MediaType, $sort: [MediaSort], $country: CountryCode) {
+      Page(page: 1, perPage: 10) {
         media(
           type: $type,
           sort: $sort,
-          format_in: $format_in,
+          countryOfOrigin: $country,
           status_not_in: [NOT_YET_RELEASED]
         ) {
           title {
@@ -47,7 +47,7 @@ const fetchFromAnilist = async (
           nextAiringEpisode {
             episode
           }
-          format
+          countryOfOrigin
         }
       }
     }
@@ -57,8 +57,12 @@ const fetchFromAnilist = async (
     type,
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
-
-  if (format) variables.format_in = [format];
+  
+  if (filter === 'MANHWA') {
+    variables.country = 'KR';
+  } else if (filter === 'MANGA') {
+    variables.country = 'JP';
+  }
 
 
   const res = await fetch('https://graphql.anilist.co', {
@@ -86,7 +90,7 @@ const fetchFromAnilist = async (
     const detectedType =
       type === 'ANIME'
         ? 'Anime'
-        : format === 'WEB_MANGA'
+        : m.countryOfOrigin === 'KR'
         ? 'Manhwa'
         : 'Manga';
 
@@ -109,7 +113,7 @@ export async function fetchTopTitles(
       case 'MANGA':
         return await fetchFromAnilist('MANGA', 'MANGA');
       case 'MANHWA':
-        return await fetchFromAnilist('MANGA', 'WEB_MANGA');
+        return await fetchFromAnilist('MANGA', 'MANHWA');
       default:
         return [];
     }
