@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
+import { Input } from './ui/input';
 import {
   Form,
   FormControl,
@@ -313,8 +313,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
       <CardContent className="p-4 space-y-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} /{' '}
-            {totalDisplay === 'Available' ? (item.progress > 0 ? item.progress : item.total) : totalDisplay}
+            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} / {totalDisplay}
           </span>
           <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>
