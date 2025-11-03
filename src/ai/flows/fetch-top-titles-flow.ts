@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview Fetches top anime, manga, and manhwa titles.
- * Uses Anilist API for Anime and Manga/Manhwa.
+ * Uses Anilist API for Anime and MangaDex API for Manga/Manhwa.
  */
 
 import { z } from 'genkit';
@@ -22,8 +22,8 @@ const FetchTopTitlesOutputSchema = z.array(TopTitleSchema);
 export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
 const fetchFromAnilist = async (
-  type: 'ANIME' | 'MANGA',
-  countryOfOrigin?: 'JP' | 'KR' | 'CN'
+  type: 'ANIME',
+  countryOfOrigin?: 'JP'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
     query ($type: MediaType, $sort: [MediaSort], $countryOfOrigin: CountryCode) {
@@ -73,7 +73,7 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.chapters || m.episodes;
+    let total = m.episodes;
     if (total === null && m.nextAiringEpisode) {
       total = m.nextAiringEpisode.episode - 1;
     }
@@ -85,6 +85,39 @@ const fetchFromAnilist = async (
   });
 };
 
+const fetchFromMangaDex = async (
+  originLanguage: 'ja' | 'ko'
+): Promise<FetchTopTitlesOutput> => {
+    const baseUrl = 'https://api.mangadex.org';
+    const resp = await fetch(
+      `${baseUrl}/manga?limit=5&order[followedCount]=desc&includes[]=cover_art&originalLanguage[]=${originLanguage}`
+    );
+
+    if (!resp.ok) {
+        throw new Error(`MangaDex API request failed: ${resp.statusText}`);
+    }
+
+    const json = await resp.json();
+    const mangaData = json.data ?? [];
+
+    return mangaData.map((manga: any) => {
+        const coverArt = manga.relationships.find((r: any) => r.type === 'cover_art');
+        const fileName = coverArt?.attributes?.fileName;
+        const imageUrl = fileName
+            ? `https://uploads.mangadex.org/covers/${manga.id}/${fileName}`
+            : 'https://placehold.co/400x600?text=No+Image';
+
+        const lastChapter = manga.attributes.lastChapter ? parseInt(manga.attributes.lastChapter, 10) : 0;
+        
+        return {
+            title: manga.attributes.title.en || manga.attributes.title[Object.keys(manga.attributes.title)[0]],
+            imageUrl: imageUrl,
+            total: !isNaN(lastChapter) ? lastChapter : 0,
+        };
+    });
+}
+
+
 export async function fetchTopTitles(
   input: FetchTopTitlesInput
 ): Promise<FetchTopTitlesOutput> {
@@ -93,9 +126,9 @@ export async function fetchTopTitles(
       case 'ANIME':
         return await fetchFromAnilist('ANIME', 'JP');
       case 'MANGA':
-        return await fetchFromAnilist('MANGA', 'JP');
+        return await fetchFromMangaDex('ja');
       case 'MANHWA':
-        return await fetchFromAnilist('MANGA', 'KR');
+        return await fetchFromMangaDex('ko');
       default:
         return [];
     }
