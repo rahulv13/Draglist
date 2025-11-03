@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -193,7 +194,7 @@ export default function SearchPage() {
                       type: type,
                       status: 'Planned',
                       progress: 0,
-                      total: item.total || 1,
+                      total: item.total || 0,
                       score: 0,
                       imageHint: '',
                       createdAt: new Date(),
