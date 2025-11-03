@@ -15,6 +15,7 @@ const TopTitleSchema = z.object({
   title: z.string().describe('The full title of the anime or manga.'),
   imageUrl: z.string().url().describe("The direct, absolute URL to the title's cover image."),
   total: z.number().nullable().describe('Total number of episodes or chapters.'),
+  type: z.enum(['Anime', 'Manga', 'Manhwa']).describe('The type of media.'),
 });
 
 const FetchTopTitlesOutputSchema = z.array(TopTitleSchema);
@@ -22,15 +23,15 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
 const fetchFromAnilist = async (
   type: 'ANIME' | 'MANGA',
-  countryOfOrigin?: 'JP' | 'KR'
+  format?: 'MANGA' | 'NOVEL' | 'ONE_SHOT' | 'MANHWA'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
-    query ($type: MediaType, $sort: [MediaSort], $countryOfOrigin: CountryCode) {
+    query ($type: MediaType, $sort: [MediaSort], $format_in: [MediaFormat]) {
       Page(page: 1, perPage: 5) {
         media(
           type: $type,
           sort: $sort,
-          countryOfOrigin: $countryOfOrigin,
+          format_in: $format_in,
           status_not_in: [NOT_YET_RELEASED]
         ) {
           title {
@@ -55,7 +56,7 @@ const fetchFromAnilist = async (
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
 
-  if (countryOfOrigin) variables.countryOfOrigin = countryOfOrigin;
+  if (format) variables.format_in = [format];
 
   const res = await fetch('https://graphql.anilist.co', {
     method: 'POST',
@@ -77,11 +78,19 @@ const fetchFromAnilist = async (
     if (total === null && m.nextAiringEpisode) {
       total = m.nextAiringEpisode.episode - 1;
     }
+
+    const detectedType =
+      type === 'ANIME'
+        ? 'Anime'
+        : format === 'MANHWA'
+        ? 'Manhwa'
+        : 'Manga';
     
     return {
       title: m.title.english || m.title.romaji,
       imageUrl: m.coverImage.large,
       total: total > 0 ? total : 0, // Default to 0 if null or less
+      type: detectedType,
     };
   });
 };
@@ -94,9 +103,9 @@ export async function fetchTopTitles(
       case 'ANIME':
         return await fetchFromAnilist('ANIME');
       case 'MANGA':
-        return await fetchFromAnilist('MANGA', 'JP');
+        return await fetchFromAnilist('MANGA', 'MANGA');
       case 'MANHWA':
-        return await fetchFromAnilist('MANGA', 'KR');
+        return await fetchFromAnilist('MANGA', 'MANHWA');
       default:
         return [];
     }
