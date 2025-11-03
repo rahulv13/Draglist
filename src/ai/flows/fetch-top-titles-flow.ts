@@ -23,15 +23,15 @@ export type FetchTopTitlesOutput = z.infer<typeof FetchTopTitlesOutputSchema>;
 
 const fetchFromAnilist = async (
   type: 'ANIME' | 'MANGA',
-  format?: 'MANGA' | 'NOVEL' | 'ONE_SHOT' | 'MANHWA'
+  format?: 'MANGA' | 'MANHWA'
 ): Promise<FetchTopTitlesOutput> => {
   const query = `
-    query ($type: MediaType, $sort: [MediaSort], $format_in: [MediaFormat]) {
+    query ($type: MediaType, $sort: [MediaSort], $country: CountryCode) {
       Page(page: 1, perPage: 5) {
         media(
           type: $type,
           sort: $sort,
-          format_in: $format_in,
+          countryOfOrigin: $country,
           status_not_in: [NOT_YET_RELEASED]
         ) {
           title {
@@ -46,6 +46,7 @@ const fetchFromAnilist = async (
           nextAiringEpisode {
             episode
           }
+          countryOfOrigin
         }
       }
     }
@@ -56,7 +57,13 @@ const fetchFromAnilist = async (
     sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
   };
 
-  if (format) variables.format_in = [format];
+  // handle country filter (important part)
+  if (format === 'MANHWA') {
+    variables.country = 'KR'; // Korea → Manhwa
+  } else if (format === 'MANGA') {
+    variables.country = 'JP'; // Japan → Manga
+  }
+
 
   const res = await fetch('https://graphql.anilist.co', {
     method: 'POST',
@@ -82,7 +89,7 @@ const fetchFromAnilist = async (
     const detectedType =
       type === 'ANIME'
         ? 'Anime'
-        : format === 'MANHWA'
+        : m.countryOfOrigin === 'KR'
         ? 'Manhwa'
         : 'Manga';
     
