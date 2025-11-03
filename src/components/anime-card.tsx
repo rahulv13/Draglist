@@ -128,7 +128,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
     });
   };
 
-  const totalDisplay = item.total > 0 ? item.total : (item.type === 'Anime' ? 'Ongoing' : 'TBD');
+  const totalDisplay = item.total > 0 ? item.total : (item.type === 'Anime' ? 'Ongoing' : 'Available');
 
   return (
     <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
@@ -314,7 +314,7 @@ export function AnimeCard({ item }: AnimeCardProps) {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} /{' '}
-            {totalDisplay}
+            {totalDisplay === 'Available' ? (item.progress > 0 ? item.progress : item.total) : totalDisplay}
           </span>
           <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>

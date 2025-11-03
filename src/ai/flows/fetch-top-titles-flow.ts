@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Fetches top anime, manga, and manhwa titles from AniList API.
@@ -71,7 +72,8 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.episodes || m.chapters;
+    let total = m.chapters || m.episodes; // Prefer chapters for manga, then episodes for anime
+    
     // If total is still null (e.g. for an ongoing anime), check nextAiringEpisode
     if (total === null && m.nextAiringEpisode) {
       // Anilist's `nextAiringEpisode.episode` is the number of the *next* episode, 
@@ -82,7 +84,7 @@ const fetchFromAnilist = async (
     return {
         title: m.title.english || m.title.romaji,
         imageUrl: m.coverImage.large,
-        // If total is still null or 0, default to 0 to indicate "unknown" or "ongoing"
+        // If total is still null or 0, default to 0 to indicate "unknown"
         total: total > 0 ? total : 0, 
     }
   });
