@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Logo className="size-8 text-primary" />
-            <span className="text-lg font-semibold">RahulList</span>
+            <span className="text-lg font-semibold">Draglist</span>
           </div>
         </SidebarHeader>
         <SidebarContent>

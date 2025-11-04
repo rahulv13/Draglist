@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the RahulList application.",
+      "description": "Represents a user of the Draglist application.",
       "properties": {
         "id": {
           "type": "string",
@@ -120,6 +120,6 @@
           }
       }
     ],
-    "reasoning": "The Firestore structure is designed to facilitate a secure and scalable RahulList application, focusing on user authentication, progress tracking, and list management. The structure prioritizes authorization independence using denormalization. User data is stored in a dedicated collection, and since the application has no collaborative features, access control is straightforward, relying on path-based ownership. The `users/{userId}` path establishes the user's root, ensuring that other collections depend on the `userId` to restrict data access to the owner.\n\nTo support progress tracking and list management, the design introduces collections for managing anime and manga titles under each user's document. These collections are structured to support `list` operations effectively (QAPs), ensuring users only access their own data. Since login is requested, standard user authentication will be via email and password, as well as the support for anonymous access.\n\nThis design uses path-based ownership under `/users/{userId}`.  The `entityName` and `$ref` properties are derived from the data entities."
+    "reasoning": "The Firestore structure is designed to facilitate a secure and scalable Draglist application, focusing on user authentication, progress tracking, and list management. The structure prioritizes authorization independence using denormalization. User data is stored in a dedicated collection, and since the application has no collaborative features, access control is straightforward, relying on path-based ownership. The `users/{userId}` path establishes the user's root, ensuring that other collections depend on the `userId` to restrict data access to the owner.\n\nTo support progress tracking and list management, the design introduces collections for managing anime and manga titles under each user's document. These collections are structured to support `list` operations effectively (QAPs), ensuring users only access their own data. Since login is requested, standard user authentication will be via email and password, as well as the support for anonymous access.\n\nThis design uses path-based ownership under `/users/{userId}`.  The `entityName` and `$ref` properties are derived from the data entities."
   }
 }
