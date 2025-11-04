@@ -72,7 +72,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     if (user?.email) {
       return user.email.charAt(0).toUpperCase();
     }
-    return 'R';
+    return 'D';
   };
 
   // Hide layout for auth pages
@@ -86,7 +86,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Logo className="size-8 text-primary" />
-            <span className="text-lg font-semibold">RahulList</span>
+            <span className="text-lg font-semibold">Draglist</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -117,7 +117,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
                 </Avatar>
                 <span className="truncate">
-                  {user?.displayName || user?.email || 'Rahul'}
+                  {user?.displayName || user?.email || 'User'}
                 </span>
               </button>
             </DropdownMenuTrigger>
