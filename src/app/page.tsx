@@ -19,6 +19,7 @@ import {
   Film,
   List,
   Target,
+  BookMarked
 } from 'lucide-react';
 import DashboardCharts from '@/components/dashboard-charts';
 
@@ -38,6 +39,7 @@ export default function DashboardPage() {
       return [
         { label: 'Anime Watched', value: 0, change: '+0' },
         { label: 'Manga Read', value: 0, change: '+0' },
+        { label: 'Manhwa Read', value: 0, change: '+0' },
         { label: 'Episodes Watched', value: 0, change: '+0' },
         { label: 'In Progress', value: 0, change: '+0' },
         { label: 'Total Entries', value: 0, change: '+0' },
@@ -48,7 +50,10 @@ export default function DashboardPage() {
       (t) => t.type === 'Anime' && t.status === 'Completed'
     ).length;
     const mangaRead = allTitles.filter(
-      (t) => (t.type === 'Manga' || t.type === 'Manhwa') && t.status === 'Completed'
+      (t) => t.type === 'Manga' && t.status === 'Completed'
+    ).length;
+     const manhwaRead = allTitles.filter(
+      (t) => t.type === 'Manhwa' && t.status === 'Completed'
     ).length;
     const episodesWatched = allTitles
       .filter((t) => t.type === 'Anime')
@@ -69,6 +74,7 @@ export default function DashboardPage() {
     return [
       { label: 'Anime Watched', value: animeWatched, change: '+0' },
       { label: 'Manga Read', value: mangaRead, change: '+0' },
+      { label: 'Manhwa Read', value: manhwaRead, change: '+0' },
       { label: 'Episodes Watched', value: episodesWatched, change: '+0' },
       { label: 'In Progress', value: inProgress, change: '+0' },
       { label: 'Total Entries', value: totalEntries, change: '+0' },
@@ -86,6 +92,7 @@ export default function DashboardPage() {
         month: d.getMonth(),
         anime: 0,
         manga: 0,
+        manhwa: 0,
       };
     }).reverse();
 
@@ -101,14 +108,16 @@ export default function DashboardPage() {
           if (monthIndex !== -1) {
             if (title.type === 'Anime') {
               months[monthIndex].anime += 1;
-            } else {
+            } else if (title.type === 'Manga') {
               months[monthIndex].manga += 1;
+            } else if (title.type === 'Manhwa') {
+                months[monthIndex].manhwa += 1;
             }
           }
         }
       }
     }
-    return months.map(({ name, anime, manga }) => ({ name, anime, manga }));
+    return months.map(({ name, anime, manga, manhwa }) => ({ name, anime, manga, manhwa }));
   }, [allTitles]);
   
   const statusDistribution = useMemo(() => {
@@ -129,6 +138,7 @@ export default function DashboardPage() {
   const iconMap: { [key: string]: React.ReactNode } = {
     'Anime Watched': <Film className="h-6 w-6 text-muted-foreground" />,
     'Manga Read': <BookOpen className="h-6 w-6 text-muted-foreground" />,
+    'Manhwa Read': <BookMarked className="h-6 w-6 text-muted-foreground" />,
     'Episodes Watched': <Clapperboard className="h-6 w-6 text-muted-foreground" />,
     'In Progress': <Activity className="h-6 w-6 text-muted-foreground" />,
     'Total Entries': <List className="h-6 w-6 text-muted-foreground" />,
@@ -140,7 +150,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -189,5 +199,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

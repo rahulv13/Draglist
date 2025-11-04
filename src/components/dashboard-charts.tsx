@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,8 +12,6 @@ import {
   PieChart,
   Cell,
   Legend,
-  RadialBarChart,
-  RadialBar,
 } from 'recharts';
 import {
   ChartContainer,
@@ -34,6 +33,10 @@ const chartConfig = {
   manga: {
     label: 'Manga',
     color: 'hsl(var(--chart-2))',
+  },
+  manhwa: {
+    label: 'Manhwa',
+    color: 'hsl(var(--chart-3))',
   },
 };
 
@@ -96,13 +99,25 @@ export default function DashboardCharts({
           cursor={false}
           content={<ChartTooltipContent indicator="dot" />}
         />
+        <Legend content={<ChartLegendContent />} />
         <Bar
           dataKey="anime"
-          fill="hsl(var(--primary))"
+          fill="var(--color-anime)"
           radius={4}
-          barSize={20}
+          barSize={15}
         />
-        <Bar dataKey="manga" fill="hsl(var(--accent))" radius={4} barSize={20} />
+        <Bar 
+            dataKey="manga" 
+            fill="var(--color-manga)" 
+            radius={4} 
+            barSize={15} 
+        />
+        <Bar
+            dataKey="manhwa"
+            fill="var(--color-manhwa)"
+            radius={4}
+            barSize={15}
+        />
       </BarChart>
     </ChartContainer>
   );
