@@ -6,8 +6,8 @@ import { FirebaseClientProvider } from '@/firebase';
 import AuthProvider from '@/components/auth-provider';
 
 export const metadata: Metadata = {
-  title: 'Draglist',
-  description: 'Track your anime and manga progress with Draglist.',
+  title: 'RahulList',
+  description: 'Track your anime and manga progress with RahulList.',
 };
 
 export default function RootLayout({
