@@ -48,7 +48,7 @@ export default function DashboardPage() {
       (t) => t.type === 'Anime' && t.status === 'Completed'
     ).length;
     const mangaRead = allTitles.filter(
-      (t) => t.type === 'Manga' && t.status === 'Completed'
+      (t) => (t.type === 'Manga' || t.type === 'Manhwa') && t.status === 'Completed'
     ).length;
     const episodesWatched = allTitles
       .filter((t) => t.type === 'Anime')
@@ -76,6 +76,41 @@ export default function DashboardPage() {
     ];
   }, [allTitles]);
 
+  const recentActivity = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      return {
+        name: d.toLocaleString('default', { month: 'short' }),
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        anime: 0,
+        manga: 0,
+      };
+    }).reverse();
+
+    if (allTitles) {
+      for (const title of allTitles) {
+        if (title.updatedAt?.toDate) {
+          const updatedDate = title.updatedAt.toDate();
+          const monthIndex = months.findIndex(
+            (m) =>
+              m.year === updatedDate.getFullYear() &&
+              m.month === updatedDate.getMonth()
+          );
+          if (monthIndex !== -1) {
+            if (title.type === 'Anime') {
+              months[monthIndex].anime += 1;
+            } else {
+              months[monthIndex].manga += 1;
+            }
+          }
+        }
+      }
+    }
+    return months.map(({ name, anime, manga }) => ({ name, anime, manga }));
+  }, [allTitles]);
+  
   const statusDistribution = useMemo(() => {
     if (!allTitles) return [];
     const watching = allTitles.filter((t) => t.status === 'Watching').length;
@@ -90,15 +125,6 @@ export default function DashboardPage() {
     ];
   }, [allTitles]);
 
-  // Using mock data until real activity tracking is implemented
-  const recentActivity = [
-    { name: 'Jan', anime: 0, manga: 0 },
-    { name: 'Feb', anime: 0, manga: 0 },
-    { name: 'Mar', anime: 0, manga: 0 },
-    { name: 'Apr', anime: 0, manga: 0 },
-    { name: 'May', anime: 0, manga: 0 },
-    { name: 'Jun', anime: 0, manga: 0 },
-  ];
 
   const iconMap: { [key: string]: React.ReactNode } = {
     'Anime Watched': <Film className="h-6 w-6 text-muted-foreground" />,
@@ -163,3 +189,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
