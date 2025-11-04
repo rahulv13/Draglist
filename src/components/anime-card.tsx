@@ -163,7 +163,12 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute top-2 right-2">
-           {!isSearchResult && (
+           {isSearchResult ? (
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-black/50 hover:bg-primary/80 hover:text-primary-foreground border-none text-white" onClick={handleAdd}>
+                <Plus className="h-4 w-4"/>
+                <span className="sr-only">Add to list</span>
+              </Button>
+            ) : (
              <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
               <AlertDialog>
                 <DropdownMenu>
@@ -331,52 +336,42 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
           </Badge>
         )}
       </CardHeader>
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
+          </span>
+          <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
+        </div>
+        <Progress value={percentage} className="h-2" />
+      </CardContent>
       {!isSearchResult && (
-        <>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
-              </span>
-              <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
+        <CardFooter className="p-4 pt-0">
+          <div className="flex w-full items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleProgressChange(-1)}
+              disabled={item.progress <= 0}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 text-center font-mono text-lg font-medium">
+              {item.progress}
             </div>
-            <Progress value={percentage} className="h-2" />
-          </CardContent>
-          <CardFooter className="p-4 pt-0">
-            <div className="flex w-full items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleProgressChange(-1)}
-                disabled={item.progress <= 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <div className="flex-1 text-center font-mono text-lg font-medium">
-                {item.progress}
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleProgressChange(1)}
-                disabled={item.total > 0 && item.progress >= item.total}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardFooter>
-        </>
-      )}
-      {isSearchResult && (
-        <CardFooter className="p-4">
-          <Button className="w-full" onClick={handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Add to List
-          </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleProgressChange(1)}
+              disabled={item.total > 0 && item.progress >= item.total}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardFooter>
       )}
     </Card>
   );
 }
-
