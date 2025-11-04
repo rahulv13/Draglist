@@ -47,7 +47,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Minus, Plus, Star, MoreVertical, Edit, Trash2 } from 'lucide-react';
-import { updateTitle, deleteTitle } from '@/lib/data';
+import { updateTitle, deleteTitle, addTitle } from '@/lib/data';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +57,7 @@ import {
 
 type AnimeCardProps = {
   item: Title;
+  isSearchResult?: boolean;
 };
 
 type FormValues = {
@@ -67,7 +68,7 @@ type FormValues = {
   score: number;
 };
 
-export function AnimeCard({ item }: AnimeCardProps) {
+export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -127,6 +128,25 @@ export function AnimeCard({ item }: AnimeCardProps) {
     });
   };
 
+  const handleAdd = () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a title.' });
+      return;
+    }
+    addTitle(firestore, user.uid, {
+      title: item.title,
+      type: item.type,
+      status: 'Planned',
+      total: item.total,
+      imageUrl: item.imageUrl,
+    });
+    toast({
+      title: 'Title Added',
+      description: `${item.title} has been added to your "Planned" list.`,
+    });
+  };
+
+
   const totalDisplay = item.total > 0 ? `/ ${item.total}` : '';
 
   return (
@@ -143,156 +163,158 @@ export function AnimeCard({ item }: AnimeCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute top-2 right-2">
-           <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
-            <AlertDialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white bg-black/50 hover:bg-black/75 hover:text-white">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                </DropdownMenuContent>
-              </DropdownMenu>
-               <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete "{item.title}" from your lists.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+           {!isSearchResult && (
+             <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+              <AlertDialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white bg-black/50 hover:bg-black/75 hover:text-white">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                 <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete "{item.title}" from your lists.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit {item.title}</DialogTitle>
-                <DialogDescription>
-                  Update the details for this title.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleEditSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    rules={{ required: 'Title is required' }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit {item.title}</DialogTitle>
+                  <DialogDescription>
+                    Update the details for this title.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(handleEditSubmit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      rules={{ required: 'Title is required' }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
+                            <Input {...field} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Anime">Anime</SelectItem>
-                            <SelectItem value="Manga">Manga</SelectItem>
-                            <SelectItem value="Manhwa">Manhwa</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Anime">Anime</SelectItem>
+                              <SelectItem value="Manga">Manga</SelectItem>
+                              <SelectItem value="Manhwa">Manhwa</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Watching">Watching</SelectItem>
+                              <SelectItem value="Reading">Reading</SelectItem>
+                              <SelectItem value="Planned">Planned</SelectItem>
+                              <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="total"
+                      rules={{
+                        required: 'Total is required',
+                        min: { value: 0, message: 'Must be at least 0' },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Episodes/Chapters</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
+                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Watching">Watching</SelectItem>
-                            <SelectItem value="Reading">Reading</SelectItem>
-                            <SelectItem value="Planned">Planned</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="total"
-                    rules={{
-                      required: 'Total is required',
-                      min: { value: 0, message: 'Must be at least 0' },
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Total Episodes/Chapters</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="score"
-                    rules={{ min: 0, max: 10 }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Score</FormLabel>
-                        <FormControl>
-                           <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit">Save Changes</Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="score"
+                      rules={{ min: 0, max: 10 }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Score</FormLabel>
+                          <FormControl>
+                             <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit">Save Changes</Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+           )}
         </div>
         <div className="absolute bottom-0 left-0 p-4">
           <CardTitle className="text-lg font-bold text-white drop-shadow-lg">
@@ -309,40 +331,52 @@ export function AnimeCard({ item }: AnimeCardProps) {
           </Badge>
         )}
       </CardHeader>
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
-          </span>
-          <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
-        </div>
-        <Progress value={percentage} className="h-2" />
-      </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <div className="flex w-full items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleProgressChange(-1)}
-            disabled={item.progress <= 0}
-          >
-            <Minus className="h-4 w-4" />
+      {!isSearchResult && (
+        <>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
+              </span>
+              <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
+            </div>
+            <Progress value={percentage} className="h-2" />
+          </CardContent>
+          <CardFooter className="p-4 pt-0">
+            <div className="flex w-full items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleProgressChange(-1)}
+                disabled={item.progress <= 0}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <div className="flex-1 text-center font-mono text-lg font-medium">
+                {item.progress}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleProgressChange(1)}
+                disabled={item.total > 0 && item.progress >= item.total}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        </>
+      )}
+      {isSearchResult && (
+        <CardFooter className="p-4">
+          <Button className="w-full" onClick={handleAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Add to List
           </Button>
-          <div className="flex-1 text-center font-mono text-lg font-medium">
-            {item.progress}
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleProgressChange(1)}
-            disabled={item.total > 0 && item.progress >= item.total}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
+        </CardFooter>
+      )}
     </Card>
   );
 }
+

@@ -177,7 +177,7 @@ export default function SearchPage() {
           <CarouselContent>
             {isLoadingTop || !items ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <CarouselItem key={index} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                <CarouselItem key={index} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
                    <div className="space-y-2">
                         <Skeleton className="h-[300px] w-full" />
                         <Skeleton className="h-4 w-3/4" />
@@ -186,8 +186,8 @@ export default function SearchPage() {
               ))
             ) : (
               items.map((item, index) => (
-                <CarouselItem key={index} className="sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                  <AnimeCard item={{
+                <CarouselItem key={index} className="basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+                  <AnimeCard isSearchResult={true} item={{
                       id: `${type}-${index}`,
                       title: item.title,
                       imageUrl: item.imageUrl,
@@ -361,7 +361,7 @@ export default function SearchPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
             {searchResults.map((item) => (
-              <AnimeCard key={item.id} item={item} />
+              <AnimeCard key={item.id} item={item} isSearchResult={true}/>
             ))}
           </div>
           {searchResults.length === 0 && (
@@ -382,3 +382,4 @@ export default function SearchPage() {
     </div>
   );
 }
+

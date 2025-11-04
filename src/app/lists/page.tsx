@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import {
   Tabs,
   TabsContent,
@@ -61,44 +61,53 @@ export default function ListsPage() {
     if (!firestore || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'titles');
   }, [firestore, user?.uid]);
-
   const { data: allTitles } = useCollection<Title>(titlesQuery);
 
-  const watching = useMemo(
-    () => allTitles?.filter((t) => t.status === 'Watching') || [],
-    [allTitles]
-  );
-  const reading = useMemo(
-    () => allTitles?.filter((t) => t.status === 'Reading') || [],
-    [allTitles]
-  );
+  const watchingQuery = useMemoFirebase(() => {
+    if (!titlesQuery) return null;
+    return query(titlesQuery, where('status', '==', 'Watching'));
+  }, [titlesQuery]);
+  const { data: watching } = useCollection<Title>(watchingQuery);
+  
+  const readingQuery = useMemoFirebase(() => {
+    if (!titlesQuery) return null;
+    return query(titlesQuery, where('status', '==', 'Reading'));
+  }, [titlesQuery]);
+  const { data: reading } = useCollection<Title>(readingQuery);
+  
+  const plannedQuery = useMemoFirebase(() => {
+    if (!titlesQuery) return null;
+    return query(titlesQuery, where('status', '==', 'Planned'));
+  }, [titlesQuery]);
+  const { data: planned } = useCollection<Title>(plannedQuery);
+
+  const completedQuery = useMemoFirebase(() => {
+    if (!titlesQuery) return null;
+    return query(titlesQuery, where('status', '==', 'Completed'));
+  }, [titlesQuery]);
+  const { data: completed } = useCollection<Title>(completedQuery);
+
+
   const readingManga = useMemo(
-    () => reading.filter((t) => t.type === 'Manga') || [],
+    () => reading?.filter((t) => t.type === 'Manga') || [],
     [reading]
   );
   const readingManhwa = useMemo(
-    () => reading.filter((t) => t.type === 'Manhwa') || [],
+    () => reading?.filter((t) => t.type === 'Manhwa') || [],
     [reading]
   );
-  const planned = useMemo(
-    () => allTitles?.filter((t) => t.status === 'Planned') || [],
-    [allTitles]
-  );
+  
   const plannedAnime = useMemo(
-    () => planned.filter((t) => t.type === 'Anime') || [],
+    () => planned?.filter((t) => t.type === 'Anime') || [],
     [planned]
   );
   const plannedManga = useMemo(
-    () => planned.filter((t) => t.type === 'Manga') || [],
+    () => planned?.filter((t) => t.type === 'Manga') || [],
     [planned]
   );
   const plannedManhwa = useMemo(
-    () => planned.filter((t) => t.type === 'Manhwa') || [],
+    () => planned?.filter((t) => t.type === 'Manhwa') || [],
     [planned]
-  );
-  const completed = useMemo(
-    () => allTitles?.filter((t) => t.status === 'Completed') || [],
-    [allTitles]
   );
 
   const handlePageChange = (tab: keyof typeof currentPages, page: number) => {
@@ -106,7 +115,8 @@ export default function ListsPage() {
   };
 
   const paginatedData = useMemo(() => {
-    const paginate = (items: Title[], page: number) => {
+    const paginate = (items: Title[] | null, page: number) => {
+      if (!items) return { items: null, totalPages: 0 };
       const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
       const paginatedItems = items.slice(
         (page - 1) * ITEMS_PER_PAGE,
@@ -222,3 +232,4 @@ export default function ListsPage() {
     </div>
   );
 }
+
