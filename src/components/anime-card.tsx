@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Title } from '@/lib/data';
@@ -46,7 +45,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, Star, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Minus, Plus, Star, MoreVertical, Edit, Trash2, BookOpen } from 'lucide-react';
 import { updateTitle, deleteTitle, addTitle } from '@/lib/data';
 import {
   DropdownMenu,
@@ -54,6 +53,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 type AnimeCardProps = {
   item: Title;
@@ -74,6 +74,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const percentage = item.total > 0 ? (item.progress / item.total) * 100 : 0;
+  const isReadable = item.type === 'Manga' || item.type === 'Manhwa';
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -150,7 +151,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
   const totalDisplay = item.total > 0 ? `/ ${item.total}` : '';
 
   return (
-    <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+    <Card className="group overflow-hidden border-2 border-transparent hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 flex flex-col">
       <CardHeader className="p-0 relative">
         <Image
           src={item.imageUrl}
@@ -336,7 +337,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
           </Badge>
         )}
       </CardHeader>
-      <CardContent className="p-4 space-y-2">
+      <div className="p-4 space-y-2 flex-grow flex flex-col justify-end">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {item.type === 'Anime' ? 'Episode' : 'Chapter'} {item.progress} {totalDisplay}
@@ -344,7 +345,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
           <span>{item.total > 0 ? `${percentage.toFixed(0)}%` : ''}</span>
         </div>
         <Progress value={percentage} className="h-2" />
-      </CardContent>
+      </div>
       {!isSearchResult && (
         <CardFooter className="p-4 pt-0">
           <div className="flex w-full items-center justify-center gap-2">
@@ -369,6 +370,14 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
             >
               <Plus className="h-4 w-4" />
             </Button>
+            {isReadable && (
+              <Link href={`/read/${item.id}`} passHref>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <BookOpen className="h-4 w-4" />
+                  <span className="sr-only">Read Now</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </CardFooter>
       )}
