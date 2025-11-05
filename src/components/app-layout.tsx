@@ -25,7 +25,6 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { DraglistLogo } from '@/components/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,10 +82,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-1.5 p-2">
-            <DraglistLogo
-              className="size-4 text-primary"
-            />
+          <div className="flex items-center p-2">
             <span className="text-lg font-semibold">Draglist</span>
           </div>
         </SidebarHeader>
