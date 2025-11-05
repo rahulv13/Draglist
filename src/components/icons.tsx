@@ -1,15 +1,23 @@
-import React from 'react';
+import * as React from "react";
 
-export const DraglistLogo = (props: React.SVGProps<SVGSVGElement>) => (
+export const DraglistLogo: React.FC<React.SVGProps<SVGSVGElement>> = ({
+  className,
+  style,
+  ...props
+}) => (
   <svg
-    viewBox="0 0 1024 1024"
     xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 1024 1024"
     width="100%"
     height="100%"
     preserveAspectRatio="xMidYMid meet"
-    {...props}
+    className={className}
+    style={{ width: "100%", height: "100%", ...style }}
     fill="currentColor"
+    aria-label="Draglist Logo"
+    {...props}
   >
+    {/* --- your exact SVG paths --- */}
     <path d="M399.217 341.333H449.6V292.115L399.217 256V341.333Z" />
     <path d="M399.217 440H449.6V390.783L399.217 355.449V440Z" />
     <path d="M399.217 538.667H449.6V489.449L399.217 454.115V538.667Z" />
@@ -31,7 +39,6 @@ export const DraglistLogo = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M523.139 454.115H573.522V404.897L523.139 369.564V454.115Z" />
     <path d="M523.139 355.449H573.522V306.231L523.139 270.897V355.449Z" />
     <path d="M488.544 288H461.577L488.544 266.051V288Z" />
-    <path d="M488.544 288L461.577 266.051V288H488.544Z" />
     <path d="M475.06 277.026L488.544 288V266.051L475.06 277.026Z" />
     <path d="M496.333 768H475.06L496.333 750.115V768Z" />
     <path d="M488.544 759.064L496.333 768V750.115L488.544 759.064Z" />
@@ -41,7 +48,6 @@ export const DraglistLogo = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M488.544 660.397L496.333 669.333V651.449L488.544 660.397Z" />
     <path d="M496.333 570.667H475.06L496.333 552.782V570.667Z" />
     <path d="M475.06 552.782V570.667L488.544 561.731L475.06 552.782Z" />
-
     <path d="M488.544 561.731L496.333 570.667V552.782L488.544 561.731Z" />
     <path d="M496.333 472H475.06L496.333 454.115V472Z" />
     <path d="M475.06 454.115V472L488.544 463.064L475.06 454.115Z" />
@@ -52,6 +58,4 @@ export const DraglistLogo = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-  <DraglistLogo {...props} />
-);
+export const Logo = DraglistLogo;
