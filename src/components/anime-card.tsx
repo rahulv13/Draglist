@@ -45,7 +45,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Minus, Plus, Star, MoreVertical, Edit, Trash2, BookOpen } from 'lucide-react';
+import { Minus, Plus, Star, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { updateTitle, deleteTitle, addTitle } from '@/lib/data';
 import {
   DropdownMenu,
@@ -53,7 +53,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
 
 type AnimeCardProps = {
   item: Title;
@@ -74,7 +73,6 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const percentage = item.total > 0 ? (item.progress / item.total) * 100 : 0;
-  const isReadable = item.type === 'Manga' || item.type === 'Manhwa';
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -370,14 +368,6 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
             >
               <Plus className="h-4 w-4" />
             </Button>
-            {isReadable && (
-              <Link href={`/read/${item.id}`} passHref>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                  <BookOpen className="h-4 w-4" />
-                  <span className="sr-only">Read Now</span>
-                </Button>
-              </Link>
-            )}
           </div>
         </CardFooter>
       )}
