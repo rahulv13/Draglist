@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/icons';
+import { DraglistLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -61,7 +61,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <Logo className="h-16 w-16 text-primary" />
+            <DraglistLogo className="h-16 w-16 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>
