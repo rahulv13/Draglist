@@ -171,13 +171,13 @@ export default function SearchPage() {
 
   const renderTopCarousel = (title: string, items: FetchTopTitlesOutput | null, type: 'Anime' | 'Manga' | 'Manhwa') => {
     return (
-      <div>
-        <h3 className="text-2xl font-bold tracking-tight mb-4">{title}</h3>
-        <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }}>
+      <div className="space-y-4">
+        <h3 className="text-2xl font-bold tracking-tight">{title}</h3>
+        <Carousel opts={{ align: "start", loop: !isLoadingTop && items && items.length > 0 }} className="relative">
           <CarouselContent>
             {isLoadingTop || !items ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <CarouselItem key={index} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
+                <CarouselItem key={index} className="basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                    <div className="space-y-2">
                         <Skeleton className="h-[300px] w-full" />
                         <Skeleton className="h-4 w-3/4" />
@@ -186,7 +186,7 @@ export default function SearchPage() {
               ))
             ) : (
               items.map((item, index) => (
-                <CarouselItem key={index} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
+                <CarouselItem key={index} className="basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                   <AnimeCard isSearchResult={true} item={{
                       id: `${type}-${index}`,
                       title: item.title,
@@ -373,7 +373,7 @@ export default function SearchPage() {
           )}
         </>
       ) : (
-        <div className="space-y-8 pt-4">
+        <div className="space-y-12 pt-4">
           {renderTopCarousel("Top 5 Anime", topAnime, 'Anime')}
           {renderTopCarousel("Top 5 Manga", topManga, 'Manga')}
           {renderTopCarousel("Top 5 Manhwa", topManhwa, 'Manhwa')}
@@ -382,4 +382,3 @@ export default function SearchPage() {
     </div>
   );
 }
-
