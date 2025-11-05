@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-1.5 p-2">
-            <DraglistLogo className="size-4 text-primary" />
+            <DraglistLogo className="w-6 h-6 text-primary shrink-0" />
             <span className="text-lg font-semibold">Draglist</span>
           </div>
         </SidebarHeader>
