@@ -73,6 +73,7 @@ const fetchFromAnilist = async (
       'Accept': 'application/json',
     },
     body: JSON.stringify({ query, variables }),
+    next: { revalidate: 3600 } // Cache for 1 hour
   });
 
   if (!res.ok) throw new Error(`Anilist fetch failed: ${res.statusText}`);
@@ -81,16 +82,21 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.episodes || m.chapters;
-
-    // If it's a releasing manga/manhwa and chapter count is unknown, fallback to volumes
-    if (type === 'MANGA' && m.status === 'RELEASING' && !total) {
-      total = m.volumes;
-    }
-
-    // Try to infer total for ongoing titles
-    if (!total && m.nextAiringEpisode?.episode) {
-      total = m.nextAiringEpisode.episode - 1;
+    let total;
+    if (type === 'ANIME') {
+      total = m.episodes;
+      // If anime is still releasing and episodes count is not up-to-date,
+      // use the next airing episode number to get a better estimate.
+      if (m.status === 'RELEASING' && m.nextAiringEpisode) {
+        total = m.nextAiringEpisode.episode - 1;
+      }
+    } else { // MANGA or MANHWA
+      total = m.chapters;
+      // If chapter count is unknown (common for ongoing series), fall back to volumes.
+      // This provides a better sense of length than '0'.
+      if (!total && m.volumes) {
+        total = m.volumes;
+      }
     }
     
     const detectedType =
