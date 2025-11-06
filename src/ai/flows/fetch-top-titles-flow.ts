@@ -48,6 +48,7 @@ const fetchFromAnilist = async (
             episode
           }
           countryOfOrigin
+          status
         }
       }
     }
@@ -80,7 +81,12 @@ const fetchFromAnilist = async (
   const data = json.data?.Page?.media ?? [];
 
   return data.map((m: any) => {
-    let total = m.episodes || m.chapters || m.volumes;
+    let total = m.episodes || m.chapters;
+
+    // If it's a releasing manga/manhwa and chapter count is unknown, fallback to volumes
+    if (type === 'MANGA' && m.status === 'RELEASING' && !total) {
+      total = m.volumes;
+    }
 
     // Try to infer total for ongoing titles
     if (!total && m.nextAiringEpisode?.episode) {
