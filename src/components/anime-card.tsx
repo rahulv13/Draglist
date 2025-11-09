@@ -86,24 +86,31 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
 
   const handleProgressChange = (increment: number) => {
     if (!user) return;
-    
+
     const isManga = item.type === 'Manga' || item.type === 'Manhwa';
     const maxProgress = item.total > 0 ? item.total : Infinity;
     const newProgress = Math.max(0, Math.min(item.progress + increment, maxProgress));
     const updatedFields: Partial<Title> = { progress: newProgress };
-  
+
     if (item.total > 0 && newProgress >= item.total) {
       updatedFields.status = 'Completed';
-    } else if (newProgress > 0) {
-        if (item.status === 'Planned') {
-            updatedFields.status = isManga ? 'Reading' : 'Watching';
-        }
+    } else if (newProgress < item.total) {
+      // If progress is less than total, it can't be 'Completed'.
+      if (item.status === 'Completed') {
+        updatedFields.status = isManga ? 'Reading' : 'Watching';
+      }
+    }
+    
+    if (newProgress > 0) {
+      if (item.status === 'Planned') {
+          updatedFields.status = isManga ? 'Reading' : 'Watching';
+      }
     } else { // newProgress is 0
       if (item.status !== 'Planned') {
           updatedFields.status = 'Planned';
       }
     }
-    
+
     updateTitle(firestore, user.uid, item.id, updatedFields);
   };
   
