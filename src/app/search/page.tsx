@@ -45,6 +45,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 type FormValues = {
   title: string;
@@ -52,6 +53,7 @@ type FormValues = {
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   total: number;
   imageUrl: string;
+  isSecret: boolean;
 };
 
 // Mock search results until a real search API is implemented
@@ -73,6 +75,7 @@ const getSearchResults = (query: string): Title[] => {
       score: 0,
       imageUrl: p.imageUrl,
       imageHint: p.imageHint,
+      isSecret: false,
       createdAt: new Date(),
       updatedAt: new Date(),
   }));
@@ -128,6 +131,7 @@ export default function SearchPage() {
       status: 'Planned',
       total: 0,
       imageUrl: '',
+      isSecret: false,
     },
   });
 
@@ -197,6 +201,7 @@ export default function SearchPage() {
                       total: item.total || 0,
                       score: 0,
                       imageHint: '',
+                      isSecret: false,
                       createdAt: new Date(),
                       updatedAt: new Date(),
                   }} />
@@ -339,6 +344,24 @@ export default function SearchPage() {
                         </FormItem>
                         )}
                         />
+                    <FormField
+                      control={form.control}
+                      name="isSecret"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Mark as Secret</FormLabel>
+                            <FormMessage />
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                     <Button type="submit" className="w-full">Add Title</Button>
                 </form>
                 </Form>

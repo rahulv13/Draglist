@@ -27,6 +27,7 @@ export type Title = {
   score: number;
   imageUrl: string;
   imageHint: string;
+  isSecret: boolean;
   createdAt: any; // serverTimestamp
   updatedAt: any; // serverTimestamp
 };
@@ -47,6 +48,7 @@ export const addTitle = (
     ...newTitleData,
     progress: 0,
     score: 0,
+    isSecret: newTitleData.isSecret || false,
     imageUrl:
       newTitleData.imageUrl || randomPlaceholder.imageUrl,
     imageHint: newTitleData.imageUrl ? newTitleData.title.split(' ').slice(0, 2).join(' ').toLowerCase() : randomPlaceholder.imageHint,

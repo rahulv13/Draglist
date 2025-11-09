@@ -71,6 +71,10 @@
         "imageHint": {
             "type": "string",
             "description": "A hint for AI to find a relevant image."
+        },
+        "isSecret": {
+          "type": "boolean",
+          "description": "Whether the title is hidden in the secret section."
         }
       },
       "required": ["title", "type", "status", "progress", "total", "imageUrl"]

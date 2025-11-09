@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Title } from '@/lib/data';
@@ -53,6 +54,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from './ui/switch';
 
 type AnimeCardProps = {
   item: Title;
@@ -65,6 +67,7 @@ type FormValues = {
   status: 'Watching' | 'Reading' | 'Planned' | 'Completed';
   total: number;
   score: number;
+  isSecret: boolean;
 };
 
 export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
@@ -81,6 +84,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
       status: item.status,
       total: item.total,
       score: item.score,
+      isSecret: item.isSecret,
     },
   });
 
@@ -145,6 +149,7 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
       status: 'Planned',
       total: item.total,
       imageUrl: item.imageUrl,
+      isSecret: false,
     });
     toast({
       title: 'Title Added',
@@ -317,6 +322,24 @@ export function AnimeCard({ item, isSearchResult = false }: AnimeCardProps) {
                              <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}/>
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isSecret"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Mark as Secret</FormLabel>
+                            <FormMessage />
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />

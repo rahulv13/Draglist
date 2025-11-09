@@ -34,6 +34,10 @@ export default function DashboardPage() {
 
   const { data: allTitles, isLoading } = useCollection<Title>(titlesQuery);
 
+  const publicTitles = useMemo(() => {
+    return allTitles?.filter(t => !t.isSecret) || [];
+  }, [allTitles]);
+
   const stats = useMemo(() => {
     if (!allTitles) {
       return [
@@ -46,23 +50,23 @@ export default function DashboardPage() {
         { label: 'Avg. Score', value: '0.00', change: '+0.0' },
       ];
     }
-    const animeWatched = allTitles.filter(
+    const animeWatched = publicTitles.filter(
       (t) => t.type === 'Anime' && t.status === 'Completed'
     ).length;
-    const mangaRead = allTitles.filter(
+    const mangaRead = publicTitles.filter(
       (t) => t.type === 'Manga' && t.status === 'Completed'
     ).length;
-     const manhwaRead = allTitles.filter(
+     const manhwaRead = publicTitles.filter(
       (t) => t.type === 'Manhwa' && t.status === 'Completed'
     ).length;
-    const episodesWatched = allTitles
+    const episodesWatched = publicTitles
       .filter((t) => t.type === 'Anime')
       .reduce((sum, t) => sum + t.progress, 0);
-    const inProgress = allTitles.filter(
+    const inProgress = publicTitles.filter(
       (t) => t.status === 'Watching' || t.status === 'Reading'
     ).length;
-    const totalEntries = allTitles.length;
-    const scoredTitles = allTitles.filter((t) => t.score > 0);
+    const totalEntries = publicTitles.length;
+    const scoredTitles = publicTitles.filter((t) => t.score > 0);
     const avgScore =
       scoredTitles.length > 0
         ? (
@@ -80,7 +84,7 @@ export default function DashboardPage() {
       { label: 'Total Entries', value: totalEntries, change: '+0' },
       { label: 'Avg. Score', value: avgScore, change: '+0.0' },
     ];
-  }, [allTitles]);
+  }, [allTitles, publicTitles]);
 
   const recentActivity = useMemo(() => {
     const months = Array.from({ length: 6 }, (_, i) => {
@@ -96,8 +100,8 @@ export default function DashboardPage() {
       };
     }).reverse();
 
-    if (allTitles) {
-      for (const title of allTitles) {
+    if (publicTitles) {
+      for (const title of publicTitles) {
         if (title.updatedAt?.toDate) {
           const updatedDate = title.updatedAt.toDate();
           const monthIndex = months.findIndex(
@@ -118,21 +122,21 @@ export default function DashboardPage() {
       }
     }
     return months.map(({ name, anime, manga, manhwa }) => ({ name, anime, manga, manhwa }));
-  }, [allTitles]);
+  }, [publicTitles]);
   
   const statusDistribution = useMemo(() => {
-    if (!allTitles) return [];
-    const watching = allTitles.filter((t) => t.status === 'Watching').length;
-    const reading = allTitles.filter((t) => t.status === 'Reading').length;
-    const planned = allTitles.filter((t) => t.status === 'Planned').length;
-    const completed = allTitles.filter((t) => t.status === 'Completed').length;
+    if (!publicTitles) return [];
+    const watching = publicTitles.filter((t) => t.status === 'Watching').length;
+    const reading = publicTitles.filter((t) => t.status === 'Reading').length;
+    const planned = publicTitles.filter((t) => t.status === 'Planned').length;
+    const completed = publicTitles.filter((t) => t.status === 'Completed').length;
     return [
       { name: 'Watching', value: watching, fill: 'var(--color-watching)' },
       { name: 'Reading', value: reading, fill: 'var(--color-reading)' },
       { name: 'Planned', value: planned, fill: 'var(--color-planned)' },
       { name: 'Completed', value: completed, fill: 'var(--color-completed)' },
     ];
-  }, [allTitles]);
+  }, [publicTitles]);
 
 
   const iconMap: { [key: string]: React.ReactNode } = {

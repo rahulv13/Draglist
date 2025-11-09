@@ -61,7 +61,7 @@ export default function ListsPage() {
 
   const titlesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return collection(firestore, 'users', user.uid, 'titles');
+    return query(collection(firestore, 'users', user.uid, 'titles'), where('isSecret', '!=', true));
   }, [firestore, user?.uid]);
   
   const watchingQuery = useMemoFirebase(() => {
@@ -275,4 +275,3 @@ export default function ListsPage() {
     </div>
   );
 }
-
