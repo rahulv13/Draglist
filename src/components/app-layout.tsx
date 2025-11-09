@@ -9,6 +9,7 @@ import {
   LogOut,
   Search,
   Settings,
+  Lock,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 
@@ -52,6 +53,11 @@ const navItems = [
     icon: Search,
     label: 'Search',
   },
+  {
+    href: '/secret',
+    icon: Lock,
+    label: 'Secret',
+  },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -92,7 +98,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href} className="w-full">
                   <SidebarMenuButton
-                    isActive={pathname === item.href}
+                    isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
                   >
                     <item.icon />
                     <span>{item.label}</span>
