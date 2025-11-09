@@ -7,9 +7,8 @@ service cloud.firestore {
       // Allow user to read/write their own user document
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Rules for the 'titles' sub-collection
-      match /titles/{titleId} {
-        // Any authenticated user who owns this list can read and write to the titles.
+      // Also allow read/write access to all subcollections
+      match /{subcollection=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
