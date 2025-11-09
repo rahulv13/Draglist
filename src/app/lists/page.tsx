@@ -54,15 +54,16 @@ export default function ListsPage() {
     plannedAnime: 1,
     plannedManga: 1,
     plannedManhwa: 1,
-    completed: 1,
+    completedAnime: 1,
+    completedManga: 1,
+    completedManhwa: 1,
   });
 
   const titlesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return collection(firestore, 'users', user.uid, 'titles');
   }, [firestore, user?.uid]);
-  const { data: allTitles } = useCollection<Title>(titlesQuery);
-
+  
   const watchingQuery = useMemoFirebase(() => {
     if (!titlesQuery) return null;
     return query(titlesQuery, where('status', '==', 'Watching'));
@@ -109,6 +110,19 @@ export default function ListsPage() {
     () => planned?.filter((t) => t.type === 'Manhwa') || [],
     [planned]
   );
+  
+  const completedAnime = useMemo(
+    () => completed?.filter((t) => t.type === 'Anime') || [],
+    [completed]
+  );
+  const completedManga = useMemo(
+    () => completed?.filter((t) => t.type === 'Manga') || [],
+    [completed]
+  );
+  const completedManhwa = useMemo(
+    () => completed?.filter((t) => t.type === 'Manhwa') || [],
+    [completed]
+  );
 
   const handlePageChange = (tab: keyof typeof currentPages, page: number) => {
     setCurrentPages(prev => ({ ...prev, [tab]: page }));
@@ -131,9 +145,11 @@ export default function ListsPage() {
       plannedAnime: paginate(plannedAnime, currentPages.plannedAnime),
       plannedManga: paginate(plannedManga, currentPages.plannedManga),
       plannedManhwa: paginate(plannedManhwa, currentPages.plannedManhwa),
-      completed: paginate(completed, currentPages.completed),
+      completedAnime: paginate(completedAnime, currentPages.completedAnime),
+      completedManga: paginate(completedManga, currentPages.completedManga),
+      completedManhwa: paginate(completedManhwa, currentPages.completedManhwa),
     };
-  }, [watching, readingManga, readingManhwa, plannedAnime, plannedManga, plannedManhwa, completed, currentPages]);
+  }, [watching, readingManga, readingManhwa, plannedAnime, plannedManga, plannedManhwa, completedAnime, completedManga, completedManhwa, currentPages]);
   
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -220,13 +236,40 @@ export default function ListsPage() {
             </Tabs>
         </TabsContent>
         <TabsContent value="completed" className="space-y-4">
-          <ListTabContent
-            titles={paginatedData.completed.items}
-            emptyMessage="You have no completed titles."
-            page={currentPages.completed}
-            totalPages={paginatedData.completed.totalPages}
-            onPageChange={(page) => handlePageChange('completed', page)}
-          />
+           <Tabs defaultValue="anime" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="anime">Anime</TabsTrigger>
+                    <TabsTrigger value="manga">Manga</TabsTrigger>
+                    <TabsTrigger value="manhwa">Manhwa</TabsTrigger>
+                </TabsList>
+                <TabsContent value="anime" className="space-y-4">
+                    <ListTabContent
+                        titles={paginatedData.completedAnime.items}
+                        emptyMessage="You have no completed anime."
+                        page={currentPages.completedAnime}
+                        totalPages={paginatedData.completedAnime.totalPages}
+                        onPageChange={(page) => handlePageChange('completedAnime', page)}
+                    />
+                </TabsContent>
+                <TabsContent value="manga" className="space-y-4">
+                    <ListTabContent
+                        titles={paginatedData.completedManga.items}
+                        emptyMessage="You have no completed manga."
+                        page={currentPages.completedManga}
+                        totalPages={paginatedData.completedManga.totalPages}
+                        onPageChange={(page) => handlePageChange('completedManga', page)}
+                    />
+                </TabsContent>
+                <TabsContent value="manhwa" className="space-y-4">
+                    <ListTabContent
+                        titles={paginatedData.completedManhwa.items}
+                        emptyMessage="You have no completed manhwa."
+                        page={currentPages.completedManhwa}
+                        totalPages={paginatedData.completedManhwa.totalPages}
+                        onPageChange={(page) => handlePageChange('completedManhwa', page)}
+                    />
+                </TabsContent>
+            </Tabs>
         </TabsContent>
       </Tabs>
     </div>
