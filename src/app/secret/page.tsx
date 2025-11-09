@@ -60,7 +60,7 @@ export default function SecretPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || !secretTitles ? (
         <p className="text-muted-foreground">Loading your secret list...</p>
       ) : secretTitles && secretTitles.length > 0 ? (
         <>
