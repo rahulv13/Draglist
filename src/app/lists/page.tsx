@@ -64,65 +64,18 @@ export default function ListsPage() {
     return query(collection(firestore, 'users', user.uid, 'titles'), where('isSecret', '!=', true));
   }, [firestore, user?.uid]);
   
-  const watchingQuery = useMemoFirebase(() => {
-    if (!titlesQuery) return null;
-    return query(titlesQuery, where('status', '==', 'Watching'));
-  }, [titlesQuery]);
-  const { data: watching } = useCollection<Title>(watchingQuery);
-  
-  const readingQuery = useMemoFirebase(() => {
-    if (!titlesQuery) return null;
-    return query(titlesQuery, where('status', '==', 'Reading'));
-  }, [titlesQuery]);
-  const { data: reading } = useCollection<Title>(readingQuery);
-  
-  const plannedQuery = useMemoFirebase(() => {
-    if (!titlesQuery) return null;
-    return query(titlesQuery, where('status', '==', 'Planned'));
-  }, [titlesQuery]);
-  const { data: planned } = useCollection<Title>(plannedQuery);
+  const { data: allTitles } = useCollection<Title>(titlesQuery);
 
-  const completedQuery = useMemoFirebase(() => {
-    if (!titlesQuery) return null;
-    return query(titlesQuery, where('status', '==', 'Completed'));
-  }, [titlesQuery]);
-  const { data: completed } = useCollection<Title>(completedQuery);
+  const watching = useMemo(() => allTitles?.filter(t => t.status === 'Watching' && t.type === 'Anime') || [], [allTitles]);
+  const readingManga = useMemo(() => allTitles?.filter(t => t.status === 'Reading' && t.type === 'Manga') || [], [allTitles]);
+  const readingManhwa = useMemo(() => allTitles?.filter(t => t.status === 'Reading' && t.type === 'Manhwa') || [], [allTitles]);
+  const plannedAnime = useMemo(() => allTitles?.filter(t => t.status === 'Planned' && t.type === 'Anime') || [], [allTitles]);
+  const plannedManga = useMemo(() => allTitles?.filter(t => t.status === 'Planned' && t.type === 'Manga') || [], [allTitles]);
+  const plannedManhwa = useMemo(() => allTitles?.filter(t => t.status === 'Planned' && t.type === 'Manhwa') || [], [allTitles]);
+  const completedAnime = useMemo(() => allTitles?.filter(t => t.status === 'Completed' && t.type === 'Anime') || [], [allTitles]);
+  const completedManga = useMemo(() => allTitles?.filter(t => t.status === 'Completed' && t.type === 'Manga') || [], [allTitles]);
+  const completedManhwa = useMemo(() => allTitles?.filter(t => t.status === 'Completed' && t.type === 'Manhwa') || [], [allTitles]);
 
-
-  const readingManga = useMemo(
-    () => reading?.filter((t) => t.type === 'Manga') || [],
-    [reading]
-  );
-  const readingManhwa = useMemo(
-    () => reading?.filter((t) => t.type === 'Manhwa') || [],
-    [reading]
-  );
-  
-  const plannedAnime = useMemo(
-    () => planned?.filter((t) => t.type === 'Anime') || [],
-    [planned]
-  );
-  const plannedManga = useMemo(
-    () => planned?.filter((t) => t.type === 'Manga') || [],
-    [planned]
-  );
-  const plannedManhwa = useMemo(
-    () => planned?.filter((t) => t.type === 'Manhwa') || [],
-    [planned]
-  );
-  
-  const completedAnime = useMemo(
-    () => completed?.filter((t) => t.type === 'Anime') || [],
-    [completed]
-  );
-  const completedManga = useMemo(
-    () => completed?.filter((t) => t.type === 'Manga') || [],
-    [completed]
-  );
-  const completedManhwa = useMemo(
-    () => completed?.filter((t) => t.type === 'Manhwa') || [],
-    [completed]
-  );
 
   const handlePageChange = (tab: keyof typeof currentPages, page: number) => {
     setCurrentPages(prev => ({ ...prev, [tab]: page }));
