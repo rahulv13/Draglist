@@ -1,7 +1,14 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { KeyRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function SecretPage() {
   return (
@@ -17,9 +24,13 @@ export default function SecretPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            You have successfully unlocked the secret section. Anything is possible here!
+            You have successfully unlocked the secret section. Anything is
+            possible here!
           </p>
         </CardContent>
+        <CardFooter className="justify-center">
+          <Button>Secret Action</Button>
+        </CardFooter>
       </Card>
     </div>
   );
