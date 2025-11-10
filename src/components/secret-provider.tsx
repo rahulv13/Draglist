@@ -19,6 +19,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 interface SecretContextType {
   isUnlocked: boolean;
@@ -28,32 +29,44 @@ interface SecretContextType {
 const SecretContext = createContext<SecretContextType | undefined>(undefined);
 
 const SECRET_PASSWORD = 'draglist';
-const STORAGE_KEY = 'draglist-secret-unlocked';
+const STORAGE_KEY_PREFIX = 'draglist-secret-unlocked-';
 
 export function SecretProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState('');
   const { toast } = useToast();
 
+  const storageKey = user ? `${STORAGE_KEY_PREFIX}${user.uid}` : null;
+
   useEffect(() => {
+    if (!storageKey) {
+      setIsUnlocked(false);
+      return;
+    }
     // Check localStorage on mount to see if the user has already unlocked it.
     try {
-      const storedValue = localStorage.getItem(STORAGE_KEY);
+      const storedValue = localStorage.getItem(storageKey);
       if (storedValue === 'true') {
         setIsUnlocked(true);
+      } else {
+        setIsUnlocked(false);
       }
     } catch (error) {
       // localStorage may not be available (e.g. in private browsing mode)
       console.warn('Could not access localStorage:', error);
+      setIsUnlocked(false);
     }
-  }, []);
+  }, [storageKey]);
 
   const handleUnlock = () => {
     if (password === SECRET_PASSWORD) {
-      try {
-        localStorage.setItem(STORAGE_KEY, 'true');
-      } catch (error) {
-        console.warn('Could not write to localStorage:', error);
+      if (storageKey) {
+        try {
+          localStorage.setItem(storageKey, 'true');
+        } catch (error) {
+          console.warn('Could not write to localStorage:', error);
+        }
       }
       setIsUnlocked(true);
       toast({
@@ -69,6 +82,11 @@ export function SecretProvider({ children }: { children: ReactNode }) {
     }
     setPassword('');
   };
+
+  if (!user) {
+    // Optional: show a loading or access denied state if there is no user
+    return null;
+  }
 
   if (!isUnlocked) {
     return (

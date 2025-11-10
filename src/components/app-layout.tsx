@@ -66,6 +66,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useUser();
 
   const handleLogout = () => {
+    // Clear the secret section's unlocked status from localStorage on logout.
+    if (user) {
+      localStorage.removeItem(`draglist-secret-unlocked-${user.uid}`);
+    }
     auth.signOut();
   };
 
