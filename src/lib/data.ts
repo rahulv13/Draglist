@@ -14,6 +14,7 @@ import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
+  setDocumentNonBlocking,
 } from '@/firebase';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -85,4 +86,17 @@ export const deleteTitle = (
   }
   const titleDoc = doc(firestore, 'users', userId, 'titles', titleId);
   deleteDocumentNonBlocking(titleDoc);
+};
+
+export const updateUserSecretPassword = (
+    firestore: Firestore,
+    userId: string,
+    password: string
+) => {
+    if (!userId) {
+        throw new Error('User must be logged in to update their password.');
+    }
+    const userDocRef = doc(firestore, 'users', userId);
+    // Use setDoc with merge:true to create or update the field
+    setDocumentNonBlocking(userDocRef, { secretPassword: password }, { merge: true });
 };

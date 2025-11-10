@@ -24,6 +24,10 @@
           "type": "string",
           "description": "The date and time the user joined the application.",
           "format": "date-time"
+        },
+        "secretPassword": {
+          "type": "string",
+          "description": "A user-defined password to protect their secret list."
         }
       },
       "required": [

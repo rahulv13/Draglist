@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,8 +19,10 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { ShieldCheck, Loader2 } from 'lucide-react';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { updateUserSecretPassword } from '@/lib/data';
 
 interface SecretContextType {
   isUnlocked: boolean;
@@ -28,14 +31,25 @@ interface SecretContextType {
 
 const SecretContext = createContext<SecretContextType | undefined>(undefined);
 
-const SECRET_PASSWORD = 'draglist';
 const STORAGE_KEY_PREFIX = 'draglist-secret-unlocked-';
 
 export function SecretProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
+  const firestore = useFirestore();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(
+    () => (user?.uid && firestore ? doc(firestore, 'users', user.uid) : null),
+    [user?.uid, firestore]
+  );
+  
+  const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const secretPassword = (userData as { secretPassword?: string })?.secretPassword;
 
   const storageKey = user ? `${STORAGE_KEY_PREFIX}${user.uid}` : null;
 
@@ -44,7 +58,6 @@ export function SecretProvider({ children }: { children: ReactNode }) {
       setIsUnlocked(false);
       return;
     }
-    // Check localStorage on mount to see if the user has already unlocked it.
     try {
       const storedValue = localStorage.getItem(storageKey);
       if (storedValue === 'true') {
@@ -53,14 +66,40 @@ export function SecretProvider({ children }: { children: ReactNode }) {
         setIsUnlocked(false);
       }
     } catch (error) {
-      // localStorage may not be available (e.g. in private browsing mode)
       console.warn('Could not access localStorage:', error);
       setIsUnlocked(false);
     }
   }, [storageKey]);
 
+  const handleCreatePassword = () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Passwords do not match',
+        description: 'Please re-enter your password.',
+      });
+      return;
+    }
+    if (newPassword.length < 4) {
+      toast({
+        variant: 'destructive',
+        title: 'Password too short',
+        description: 'Please choose a password with at least 4 characters.',
+      });
+      return;
+    }
+    if (firestore && user?.uid) {
+      updateUserSecretPassword(firestore, user.uid, newPassword);
+      toast({
+        title: 'Password Set!',
+        description: 'Your secret section is now protected.',
+      });
+      // The useDoc hook will automatically update `userData`
+    }
+  };
+
   const handleUnlock = () => {
-    if (password === SECRET_PASSWORD) {
+    if (password === secretPassword) {
       if (storageKey) {
         try {
           localStorage.setItem(storageKey, 'true');
@@ -83,43 +122,59 @@ export function SecretProvider({ children }: { children: ReactNode }) {
     setPassword('');
   };
 
-  if (!user) {
-    // Optional: show a loading or access denied state if there is no user
-    return null;
+  if (!user || isUserDocLoading) {
+    return (
+        <div className="flex h-full w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
   }
 
   if (!isUnlocked) {
+    if (!secretPassword) {
+      // First time setup: Create a password
+      return (
+        <Dialog open={true}>
+          <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+            <DialogHeader className="text-center space-y-4">
+              <div className="flex justify-center"><ShieldCheck className="h-12 w-12 text-primary" /></div>
+              <DialogTitle className="text-2xl">Create Secret Password</DialogTitle>
+              <DialogDescription>
+                Set a password to protect your secret anime and manga stash.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreatePassword()} />
+              </div>
+              <Button onClick={handleCreatePassword} className="w-full">Set Password</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    // Existing password: Unlock
     return (
       <Dialog open={true}>
-        <DialogContent
-          className="max-w-sm"
-          onInteractOutside={(e) => e.preventDefault()}
-          hideCloseButton={true}
-        >
+        <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
           <DialogHeader className="text-center space-y-4">
-            <div className="flex justify-center">
-              <ShieldCheck className="h-12 w-12 text-primary" />
-            </div>
+            <div className="flex justify-center"><ShieldCheck className="h-12 w-12 text-primary" /></div>
             <DialogTitle className="text-2xl">Secret Area</DialogTitle>
             <DialogDescription>
-              This section is password protected. Please enter the password to
-              continue.
+              This section is password protected. Please enter the password to continue.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleUnlock()} />
             </div>
-            <Button onClick={handleUnlock} className="w-full">
-              Unlock
-            </Button>
+            <Button onClick={handleUnlock} className="w-full">Unlock</Button>
           </div>
         </DialogContent>
       </Dialog>
