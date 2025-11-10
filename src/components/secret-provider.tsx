@@ -15,6 +15,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -122,6 +133,18 @@ export function SecretProvider({ children }: { children: ReactNode }) {
     setPassword('');
   };
 
+  const handleResetPassword = () => {
+    if (firestore && user?.uid) {
+      // For simplicity, we'll just clear the password. 
+      // In a real app, you might want a more secure flow.
+      updateUserSecretPassword(firestore, user.uid, null);
+      toast({
+        title: 'Password Reset',
+        description: 'Your secret password has been cleared. Please create a new one.',
+      });
+    }
+  };
+
   if (!user || isUserDocLoading) {
     return (
         <div className="flex h-full w-full items-center justify-center">
@@ -160,24 +183,43 @@ export function SecretProvider({ children }: { children: ReactNode }) {
     }
     // Existing password: Unlock
     return (
-      <Dialog open={true}>
-        <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
-          <DialogHeader className="text-center space-y-4">
-            <div className="flex justify-center"><ShieldCheck className="h-12 w-12 text-primary" /></div>
-            <DialogTitle className="text-2xl">Secret Area</DialogTitle>
-            <DialogDescription>
-              This section is password protected. Please enter the password to continue.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleUnlock()} />
+      <AlertDialog>
+        <Dialog open={true}>
+          <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()} hideCloseButton={true}>
+            <DialogHeader className="text-center space-y-4">
+              <div className="flex justify-center"><ShieldCheck className="h-12 w-12 text-primary" /></div>
+              <DialogTitle className="text-2xl">Secret Area</DialogTitle>
+              <DialogDescription>
+                This section is password protected. Please enter the password to continue.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleUnlock()} />
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Button onClick={handleUnlock} className="w-full">Unlock</Button>
+                 <AlertDialogTrigger asChild>
+                  <Button variant="link" className="text-sm text-muted-foreground">Forgot password?</Button>
+                </AlertDialogTrigger>
+              </div>
             </div>
-            <Button onClick={handleUnlock} className="w-full">Unlock</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Reset Secret Password?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Are you sure you want to reset your secret password? You will be prompted to create a new one.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetPassword}>Reset Password</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     );
   }
 

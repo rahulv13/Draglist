@@ -91,12 +91,12 @@ export const deleteTitle = (
 export const updateUserSecretPassword = (
     firestore: Firestore,
     userId: string,
-    password: string
+    password: string | null
 ) => {
     if (!userId) {
         throw new Error('User must be logged in to update their password.');
     }
     const userDocRef = doc(firestore, 'users', userId);
-    // Use setDoc with merge:true to create or update the field
+    // Use setDoc with merge:true to create, update, or clear the field
     setDocumentNonBlocking(userDocRef, { secretPassword: password }, { merge: true });
 };
