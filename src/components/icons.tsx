@@ -8,12 +8,11 @@ export const DraglistLogo: React.FC<React.SVGProps<SVGSVGElement>> = ({
 }) => (
   <div className={className} style={{...style, position: 'relative'}}>
       <Image
-        src="https://picsum.photos/seed/draglistlogo/100/100"
-        alt="Draglist Logo Placeholder"
+        src="https://storage.googleapis.com/aif-us.appspot.com/public/project_images/2a41b52a-912b-4c54-9122-a27170f20958.jpeg"
+        alt="Draglist Logo"
         layout="fill"
         objectFit="cover"
-        className="rounded-full"
-        data-ai-hint="logo abstract"
+        data-ai-hint="dragon logo"
       />
   </div>
 );
