@@ -35,11 +35,12 @@ export default function DashboardPage() {
   const { data: allTitles, isLoading } = useCollection<Title>(titlesQuery);
 
   const publicTitles = useMemo(() => {
+    if (isLoading || !allTitles) return [];
     return allTitles?.filter(t => !t.isSecret) || [];
-  }, [allTitles]);
+  }, [allTitles, isLoading]);
 
   const stats = useMemo(() => {
-    if (!allTitles) {
+    if (isLoading || !allTitles) {
       return [
         { label: 'Anime Watched', value: 0, change: '+0' },
         { label: 'Manga Read', value: 0, change: '+0' },
@@ -84,9 +85,22 @@ export default function DashboardPage() {
       { label: 'Total Entries', value: totalEntries, change: '+0' },
       { label: 'Avg. Score', value: avgScore, change: '+0.0' },
     ];
-  }, [allTitles, publicTitles]);
+  }, [allTitles, publicTitles, isLoading]);
 
   const recentActivity = useMemo(() => {
+    if (isLoading || !publicTitles) {
+       return Array.from({ length: 6 }, (_, i) => {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          return {
+            name: d.toLocaleString('default', { month: 'short' }),
+            anime: 0,
+            manga: 0,
+            manhwa: 0,
+          };
+        }).reverse();
+    }
+
     const months = Array.from({ length: 6 }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
@@ -122,10 +136,10 @@ export default function DashboardPage() {
       }
     }
     return months.map(({ name, anime, manga, manhwa }) => ({ name, anime, manga, manhwa }));
-  }, [publicTitles]);
+  }, [publicTitles, isLoading]);
   
   const statusDistribution = useMemo(() => {
-    if (!publicTitles) return [];
+    if (isLoading || !publicTitles) return [];
     const watching = publicTitles.filter((t) => t.status === 'Watching').length;
     const reading = publicTitles.filter((t) => t.status === 'Reading').length;
     const planned = publicTitles.filter((t) => t.status === 'Planned').length;
@@ -136,7 +150,7 @@ export default function DashboardPage() {
       { name: 'Planned', value: planned, fill: 'var(--color-planned)' },
       { name: 'Completed', value: completed, fill: 'var(--color-completed)' },
     ];
-  }, [publicTitles]);
+  }, [publicTitles, isLoading]);
 
 
   const iconMap: { [key: string]: React.ReactNode } = {
