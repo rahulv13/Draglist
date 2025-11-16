@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFirestore, useUser } from '@/firebase';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,9 +34,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { fetchTitleInfo } from '@/ai/flows/fetch-title-info-flow';
 import { fetchTopTitles, type FetchTopTitlesOutput } from '@/ai/flows/fetch-top-titles-flow';
+import { searchTitles, type SearchTitlesOutput } from '@/ai/flows/search-titles-flow';
 import { Label } from '@/components/ui/label';
 import {
   Carousel,
@@ -46,6 +47,7 @@ import {
 } from '@/components/ui/carousel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { useDebounce } from 'use-debounce';
 
 type FormValues = {
   title: string;
@@ -56,34 +58,15 @@ type FormValues = {
   isSecret: boolean;
 };
 
-// Mock search results until a real search API is implemented
-const getSearchResults = (query: string): Title[] => {
-  if (!query) return [];
-  const queryWords = query.toLowerCase().split(' ');
-  return PlaceHolderImages.filter(p => 
-    queryWords.every(word => 
-      p.description.toLowerCase().includes(word) || 
-      p.imageHint.toLowerCase().includes(word)
-    )
-  ).map(p => ({
-      id: p.id,
-      title: p.description,
-      type: p.description.toLowerCase().includes('manga') ? 'Manga' : 'Anime',
-      status: 'Planned', // Mock
-      progress: 0,
-      total: 12,
-      score: 0,
-      imageUrl: p.imageUrl,
-      imageHint: p.imageHint,
-      isSecret: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-  }));
-};
-
-
 export default function SearchPage() {
   const [query, setQuery] = useState('');
+  const [debouncedQuery] = useDebounce(query, 300);
+  const [searchResults, setSearchResults] = useState<SearchTitlesOutput>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+
   const [open, setOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [urlToFetch, setUrlToFetch] = useState('');
@@ -95,6 +78,31 @@ export default function SearchPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      setIsSearching(true);
+      searchTitles({ query: debouncedQuery }).then(results => {
+        setSearchResults(results);
+        setIsSearching(false);
+        setDropdownOpen(true);
+      });
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+      setDropdownOpen(false);
+    }
+  }, [debouncedQuery]);
 
   useEffect(() => {
     const getTopTitles = async () => {
@@ -121,8 +129,6 @@ export default function SearchPage() {
     };
     getTopTitles();
   }, [toast]);
-
-  const searchResults = getSearchResults(query);
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -151,6 +157,26 @@ export default function SearchPage() {
     form.reset();
     setOpen(false);
   };
+
+  const handleAddFromSearch = useCallback((item: SearchTitlesOutput[0]) => {
+     if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a title.' });
+      return;
+    }
+    addTitle(firestore, user.uid, {
+      title: item.title,
+      type: item.type,
+      status: 'Planned',
+      total: item.total || 0,
+      imageUrl: item.imageUrl,
+      isSecret: false,
+    });
+    toast({
+      title: 'Title Added',
+      description: `${item.title} has been added to your "Planned" list.`,
+    });
+    setQuery('');
+  }, [user, firestore, toast]);
 
   const handleFetchInfo = async () => {
     if (!urlToFetch) {
@@ -195,7 +221,7 @@ export default function SearchPage() {
                       id: `${type}-${index}`,
                       title: item.title,
                       imageUrl: item.imageUrl,
-                      type: type,
+                      type: item.type,
                       status: 'Planned',
                       progress: 0,
                       total: item.total || 0,
@@ -290,7 +316,7 @@ export default function SearchPage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                <Select onValuechange={field.onChange} defaultValue={field.value} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a type" />
@@ -327,7 +353,7 @@ export default function SearchPage() {
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValuechange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select a status" />
@@ -369,39 +395,51 @@ export default function SearchPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <div className="relative" ref={searchContainerRef}>
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+         {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground animate-spin z-10" />}
         <Input
           type="search"
           placeholder="Search for anime or manga..."
           className="w-full rounded-lg bg-background pl-10 h-12 text-lg"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query && setDropdownOpen(true)}
         />
+        {isDropdownOpen && searchResults.length > 0 && (
+          <Card className="absolute top-full mt-2 w-full max-h-96 overflow-y-auto z-50">
+            <div className="p-2">
+              {searchResults.map((item, index) => (
+                <div 
+                    key={`${item.title}-${index}`} 
+                    className="flex items-center gap-4 p-2 rounded-md hover:bg-accent cursor-pointer"
+                    onClick={() => handleAddFromSearch(item)}
+                >
+                  <Image src={item.imageUrl} alt={item.title} width={40} height={60} className="rounded-sm aspect-[2/3] object-cover" />
+                  <div className="flex-grow">
+                    <p className="font-semibold">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.type} &bull; {item.total || '?'} {item.type === 'Anime' ? 'eps' : 'chs'}</p>
+                  </div>
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+         {isDropdownOpen && !isSearching && searchResults.length === 0 && query && (
+          <Card className="absolute top-full mt-2 w-full z-50">
+            <div className="p-4 text-center text-muted-foreground">
+              No results found for "{query}".
+            </div>
+          </Card>
+        )}
       </div>
 
-      {query ? (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pt-4">
-            {searchResults.map((item) => (
-              <AnimeCard key={item.id} item={item} isSearchResult={true}/>
-            ))}
-          </div>
-          {searchResults.length === 0 && (
-            <div className="text-center col-span-full py-16">
-              <p className="text-muted-foreground">
-                No results found for "{query}".
-              </p>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="space-y-12 pt-4">
-          {renderTopCarousel("Top 5 Anime", topAnime, 'Anime')}
-          {renderTopCarousel("Top 5 Manga", topManga, 'Manga')}
-          {renderTopCarousel("Top 5 Manhwa", topManhwa, 'Manhwa')}
-        </div>
-      )}
+      <div className="space-y-12 pt-4">
+        {renderTopCarousel("Top 5 Anime", topAnime, 'Anime')}
+        {renderTopCarousel("Top 5 Manga", topManga, 'Manga')}
+        {renderTopCarousel("Top 5 Manhwa", topManhwa, 'Manhwa')}
+      </div>
     </div>
   );
 }
